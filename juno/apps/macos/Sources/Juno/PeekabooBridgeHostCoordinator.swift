@@ -14,7 +14,7 @@ final class PeekabooBridgeHostCoordinator {
     private var host: PeekabooBridgeHost?
     private var services: JunoPeekabooBridgeServices?
 
-    private static let legacySocketDirectoryNames = ["junodbot", "junodis", "moltbot"]
+    private static let legacySocketDirectoryNames = ["juno", "junodis", "moltbot"]
 
     private static var junoSocketPath: String {
         let fileManager = FileManager.default

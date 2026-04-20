@@ -54,7 +54,7 @@ jobs:
                 label: "r: support",
                 close: true,
                 message:
-                  "Please use [our support server](https://discord.gg/junod) and ask in #help or #users-helping-users to resolve this, or follow the stuck FAQ at https://docs.juno.ai/help/faq#im-stuck-whats-the-fastest-way-to-get-unstuck.",
+                  "Please use [our support server](https://discord.gg/juno) and ask in #help or #users-helping-users to resolve this, or follow the stuck FAQ at https://docs.juno.ai/help/faq#im-stuck-whats-the-fastest-way-to-get-unstuck.",
               },
               {
                 label: "r: no-ci-pr",
@@ -96,7 +96,7 @@ jobs:
 
             const maintainerTeam = "maintainer";
             const pingWarningMessage =
-              "Please don’t spam-ping multiple maintainers at once. Be patient, or join our community Discord for help: https://discord.gg/junod";
+              "Please don’t spam-ping multiple maintainers at once. Be patient, or join our community Discord for help: https://discord.gg/juno";
             const mentionRegex = /@([A-Za-z0-9-]+)/g;
             const maintainerCache = new Map();
             const normalizeLogin = (login) => login.toLowerCase();

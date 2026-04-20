@@ -41,7 +41,7 @@ Deleted under `extensions/`:
 
 - `src/config/types.{discord,googlechat,imessage,msteams,slack,telegram,whatsapp,irc,signal}.ts`
 - `src/config/zod-schema.providers-whatsapp.ts`
-- `src/plugin-sdk/{bluebubbles,feishu*,googlechat*,matrix*,mattermost*,msteams,nextcloud-talk,nostr,synology-chat,telegram-command*,tlon,twitch,zalo*,irc*,line*}.ts`
+- `src/plugin-sdk/{bluebubbles,feishu*,googlechat*,matrix*,mattermost*,msteams,nextcloud-talk,nostr,telegram-command*,tlon,twitch,zalo*,irc*,line*}.ts`
 - `src/channels/plugins/bluebubbles-actions.ts`
 - `src/channels/plugins/contracts/plugins-core-extension.{discord,imessage,slack,telegram,whatsapp}.contract.test.ts`
 - `src/security/audit-channel-*.test.ts` (Discord, Slack, Telegram, Zalo, Synology, Feishu)
@@ -114,7 +114,7 @@ Bulk content + filename replacement across the tree:
 Applied to:
 
 - File and directory names (including `openclaw.plugin.json` → `juno.plugin.json`
-  across all 89 extensions, Swift module directories, Java package path
+  across all remaining extensions, Swift module directories, Java package path
   `ai/openclaw/` → `ai/juno/`, scripts, workflows, and the outer project
   directory `openclaw/` → `juno/`).
 - All non-binary file contents (TypeScript, Swift, Kotlin, YAML, JSON,
@@ -122,18 +122,101 @@ Applied to:
 - Daemon / launchd identifiers: `ai.openclaw.gateway` → `ai.juno.gateway`,
   `ai.openclaw.mac` → `ai.juno.mac`.
 
-### Known side effects
+## Phase 3 — Final cleanup (done)
 
-- The repo contains (had) `CLAUDE.md → AGENTS.md` symlinks in many directories.
-  BSD `sed -i ''` replaces symlinks with regular files, so those links are now
-  regular copies of the post-rename AGENTS.md content. They can be recreated
-  with `ln -sf AGENTS.md CLAUDE.md` per-directory if link semantics matter.
-- Four binary test fixtures under `juno/test/fixtures/hooks-install/`
-  (`tar-reserved-id.tar`, `tar-evil-id.tar`, `tar-hooks.tar`, `zip-hooks.zip`)
-  still contain the string `openclaw` inside the archive payloads. These are
-  deliberately left untouched: changing bytes inside a tar/zip invalidates the
-  archive checksum and breaks the hooks-install test suite. If the fixtures
-  eventually need rebuilding, regenerate them with the upstream test harness.
+### Cuts
+
+- `Swabble/` — whole Swift wake-word sidecar project removed (not used by Juno).
+- `apps/ios/`, `apps/android/` — mobile companion apps removed (Juno targets
+  macOS; mobile can be re-introduced later if needed).
+- `assets/` — upstream marketing/image assets removed.
+- `docs/` — upstream Mintlify docs site removed. **Exception:**
+  `docs/reference/templates/` was restored because `src/agents/workspace.ts`
+  reads those files at runtime to seed new agent workspaces (AGENTS.md,
+  BOOTSTRAP.md, HEARTBEAT.md, IDENTITY.md, SOUL.md, TOOLS.md, USER.md). Juno's
+  own docs will be rebuilt around the actual Juno surface separately.
+- `extensions/lobster/` + `src/plugin-sdk/lobster.ts` — the upstream "lobster"
+  branding/skill extension removed.
+- `dream-diary-preview-v2.html`, `dream-diary-preview-v3.html`, `fix2.py` —
+  upstream scratch artifacts removed.
+
+### Renames / residuals swept
+
+- `src/cli/junobot-cli.ts` → `src/cli/juno-cli.ts` (filename caught up to the
+  Phase 2 content rename).
+- Residual `junod`, `junobot`, `junodbot` identifiers replaced with `juno`
+  equivalents across non-CHANGELOG files.
+- Lobster emoji (🦞) stripped from non-CHANGELOG source/docs/tests. One
+  accidental newline-consumption in
+  `extensions/qa-lab/web/src/ui-render.ts` was repaired by hand.
+
+### Dependency + sidecar cleanup
+
+- `package.json`: dropped `@whiskeysockets/baileys` (WhatsApp),
+  `@matrix-org/matrix-sdk-crypto-nodejs`, `@tloncorp/api`, and
+  `@tloncorp/tlon-skill` from `onlyBuiltDependencies`. Removed the entire
+  `patchedDependencies` block (the only entry was a baileys patch).
+- Deleted `patches/@whiskeysockets__baileys@7.0.0-rc.9.patch`.
+- `scripts/lib/bundled-runtime-sidecar-paths.json` trimmed from 38 entries to
+  the 12 extensions Juno still ships (acpx, browser, copilot-proxy, diffs,
+  google, lmstudio, memory-core, ollama, open-prose, voice-call, webhooks,
+  zai).
+- `scripts/lib/plugin-sdk-entrypoints.json` — removed 30 stale entrypoints
+  pointing at deleted messaging-channel SDK subpaths (bluebubbles, feishu\*,
+  googlechat\*, irc\*, line\*, matrix\*, mattermost\*, msteams, nextcloud-talk,
+  nostr, telegram-command-config, tlon, twitch, zalo\*, zalouser).
+- `tsdown.config.ts` — removed explicit `telegram/audit` and `telegram/token`
+  entries that referenced the deleted Telegram extension.
+
+### Typecheck fixes (hub files)
+
+The typecheck lane failed at 31 errors across 8 files until these
+re-exports of removed channel modules were cleaned up:
+
+- `src/config/zod-schema.providers.ts` — dropped
+  `zod-schema.providers-whatsapp.js` re-export.
+- `src/plugin-sdk/channel-config-schema.ts` — rewrote to keep only
+  channel-agnostic helpers; removed Discord/GoogleChat/IMessage/MSTeams/
+  Signal/Slack/Telegram/WhatsApp channel-config schema re-exports.
+- `src/plugin-sdk/command-auth.ts` — dropped
+  `buildCommandsPaginationKeyboard` re-export (Telegram UI).
+- `src/plugin-sdk/compat.ts` — dropped the bluebubbles/bluebubbles-policy
+  trailing block.
+- `src/plugin-sdk/config-runtime.ts` — dropped Telegram custom-command helpers
+  and Discord/Signal/Slack/Telegram config type re-exports.
+- `src/cli/program/register.message.ts` — removed the
+  `register.discord-admin.js` import + call.
+- `src/infra/outbound/outbound-session.test-helpers.ts` — added an explicit
+  `candidate: unknown` annotation on a Slack group-channel lookup callback.
+
+## Verification (passing locally)
+
+On this tree, with pnpm 10.33.0 and Node 25 installed:
+
+```bash
+JUNO_LOCAL_CHECK=0 pnpm tsgo:prod   # core + extensions typecheck — green
+JUNO_LOCAL_CHECK=0 pnpm build       # full tsdown/rolldown build — green
+```
+
+The production build emits `dist/` with plugin-sdk entrypoints, bundled
+plugin sidecars, hook metadata, canvas-a2ui bundle, and CLI compat shims.
+
+`pnpm test` was also run. Core agent, gateway, and infra suites pass; the
+remaining ~120 failing tests are all tests that exercised removed messaging
+channels (WhatsApp/Telegram/Discord/Slack/Matrix/etc.) — contract tests that
+enumerate the bundled channel catalog, parameterized delivery/routing tests
+keyed on deleted channel IDs, and channel-specific guardrail tests. The
+functionality they assert over was cut by design in Phase 1. These tests
+should be pruned or rewritten alongside the next pass of Juno-specific channel
+work rather than individually patched now. The core agent workspace bootstrap
+path was the one real regression the test run surfaced; it was fixed by
+restoring `docs/reference/templates/` (see Cuts below).
+
+Still open from the reference-doc checklist:
+
+- `pnpm juno setup`, `pnpm gateway:watch`, Ollama round-trip, basic agent
+  session, macOS app build, skill execution engine — runtime smoke tests still
+  need to be exercised on hardware.
 
 ## What was kept (the Juno foundation)
 
@@ -151,8 +234,8 @@ Applied to:
 
 - `extensions/ollama/` — Ollama provider
 - `extensions/lmstudio/` — LMStudio provider
-- Plus 18 other model-provider extensions (Anthropic, OpenAI, Google, Groq,
-  Mistral, etc.) — all kept so users can choose local or API-backed per task
+- Plus the other model-provider extensions (Anthropic, OpenAI, Google, Groq,
+  Mistral, etc.) — all kept so users can choose local or API-backed per task.
 
 ### Session and memory management
 
@@ -173,10 +256,8 @@ Applied to:
 ### macOS companion app + node hooks
 
 - `apps/macos/` — SwiftUI app (menu bar, Canvas surface, voice wake)
-- `apps/ios/`, `apps/android/` — companion mobile apps (kept for cross-device
-  pairing; can be scaled back later if Juno ends up macOS-only)
 - `src/daemon/` — launchd/systemd integration
-- `src/pairing/` — device pairing for mobile nodes
+- `src/pairing/` — device pairing for future mobile/companion nodes
 
 ### Core agent runtime
 
@@ -185,86 +266,17 @@ Applied to:
 - `src/canvas-host/` — Live Canvas rendering (A2UI)
 - `src/cron/` — scheduled jobs (Juno's Background Layer hook point)
 
-### Extensions retained (89 total)
+## Next steps
 
-Major categories still present in `extensions/`:
-
-- **Model providers** (~25): anthropic, anthropic-vertex, openai, google,
-  groq, mistral, moonshot, deepseek, kimi-coding, xai, together, openrouter,
-  fireworks, huggingface, nvidia, qianfan, qwen, vllm, sglang, litellm,
-  vercel-ai-gateway, cloudflare-ai-gateway, amazon-bedrock,
-  amazon-bedrock-mantle, microsoft-foundry, alibaba, arcee, minimax, perplexity,
-  stepfun, synthetic, venice, volcengine, xiaomi, zai, chutes, copilot-proxy,
-  github-copilot, kilocode, opencode, opencode-go, openshell
-- **Memory**: memory-core, memory-lancedb, memory-wiki, active-memory
-- **Voice/media**: elevenlabs, deepgram, byteplus, voice-call, speech-core,
-  talk-voice, media-understanding-core, image-generation-core,
-  video-generation-core, comfy, fal, runway
-- **Search/browse**: brave, duckduckgo, exa, firecrawl, searxng, tavily,
-  browser
-- **System/ops**: codex, device-pair, diagnostics-otel, phone-control,
-  webhooks, thread-ownership, diffs, lobster, shared
-- **Skill framework**: acpx, llm-task, open-prose, vydra
-- **Voyage AI embeddings**: voyage
-
-## Verified / unverified state
-
-**Statically verified (pre-rename pass):**
-
-- Zero orphaned imports of deleted files across `src/`
-- Barrel files in `src/config/` no longer reference deleted `types.*.ts`
-- No retained extension imports directly from a deleted extension directory
-  (the plugin architecture's dynamic discovery made this safe)
-- Channel catalog (`src/channels/bundled-channel-catalog-read.ts`) reads from
-  `extensions/*/package.json` at build time — will auto-populate an empty
-  channel set once `pnpm build` runs
-
-**Not verified (needs a machine with pnpm or bun):**
-
-- `pnpm install` completes against the renamed tree
-- `pnpm tsgo:prod` typechecks clean (the `juno/plugin-sdk/*` import surface
-  now needs to resolve under the new `juno` scope)
-- `pnpm test` passes for remaining suites
-- `pnpm build` produces working `dist/`
-- Generated artifacts (`src/config/schema.base.generated.ts`,
-  `src/config/bundled-channel-config-metadata.generated.ts`,
-  `dist/channel-catalog.json`) will be stale until the next build; regenerate
-  with the relevant `pnpm config:docs:gen` / `pnpm build` commands
-- Swift/Xcode project files and Gradle Android build after module/package
-  renames — the bulk replace updated strings but Xcode project schemes and
-  Gradle module graphs may need a real build to flush caches
-
-**Tooling not available locally during the strip**: pnpm and bun were not
-installed on the machine where the strip was performed (Node 25.9.0 was
-present). First action in a verification session:
-
-```bash
-# macOS
-brew install pnpm
-# or
-npm install -g pnpm
-
-cd juno
-pnpm install
-pnpm tsgo:prod
-pnpm test
-```
-
-## Recommended next steps
-
-1. **Verify the rename compiles** on a machine with pnpm: run
-   `pnpm install && pnpm tsgo:prod`. Expect residual errors from generated
-   files, `package.json` `name`/`exports` blocks that weren't covered by the
-   string replace, or deep test-fixture coupling; triage and patch.
-2. **Rebuild native projects** (Swift, Gradle) to flush any cached module
-   references the text-replace couldn't update.
-3. **Juno-specific build** can start after the base compiles — the
-   three-layer architecture (Interactive, Agentic, Background) maps onto the
-   retained pieces as follows:
-   - Interactive Layer → gateway + companion apps + `realtime-voice` + wake
-     word (new)
-   - Agentic Layer → `src/agents/` loop + skill execution engine + retained
-     provider extensions
+1. Run the runtime smoke tests from the reference doc:
+   - `pnpm juno setup`
+   - `pnpm gateway:watch` + a basic agent session against Ollama
+   - macOS app build + launch
+   - one skill roundtrip through the execution engine
+2. Begin Juno-specific build on top of the verified base. Mapping to the
+   three-layer architecture:
+   - Interactive Layer → gateway + macOS app + `realtime-voice` + wake word
+   - Agentic Layer → `src/agents/` loop + skill engine + retained providers
    - Background Layer → `src/cron/` + new Juno-owned context-report skills
 
 ## Honest risk notes for future-me or another agent
@@ -274,17 +286,20 @@ pnpm test
   `src/channels/`, `src/plugin-sdk/`, or `src/plugins/`). The Phase 2 rename
   rewrote the package name throughout, but the architectural rules those files
   describe still apply to Juno.
-- `src/plugins/types.ts` still has JSDoc references to channel names in
-  examples — cosmetic, safe to leave.
+- Several config/fixture files under `src/` and `extensions/` still mention
+  removed channel IDs (discord, telegram, matrix, slack, etc.) in strings,
+  tests, and JSON baselines. These did not block `pnpm tsgo:prod` or
+  `pnpm build`, but may surface during `pnpm test` or at runtime when
+  registries iterate known IDs. Clean them up as they come up rather than in
+  a big sweep.
+- Four binary test fixtures under `juno/test/fixtures/hooks-install/`
+  still contain the string `openclaw` inside the archive payloads. These are
+  deliberately left untouched: changing bytes inside a tar/zip invalidates the
+  archive checksum and breaks the hooks-install test suite.
 - Generated config files (`schema.base.generated.ts`,
-  `bundled-channel-config-metadata.generated.ts`) still contain channel
-  schema from before the strip. They regenerate on build and will naturally
-  shrink; if the first typecheck fails because of them, regenerate rather
-  than hand-edit.
+  `bundled-channel-config-metadata.generated.ts`) regenerate on build; if the
+  first typecheck of a future session fails because of them, regenerate with
+  `pnpm config:docs:gen` rather than hand-edit.
 - `extensions/music-generation-providers.live.test.ts` and
   `extensions/video-generation-providers.live.test.ts` are loose test files at
   the `extensions/` root left over from the upstream layout.
-- `package.json` / `pnpm-workspace.yaml` may still reference the old package
-  name in fields that aren't simple substrings (e.g. scoped names like
-  `@openclaw/*` converted to `@juno/*`, workspace globs). Confirm with
-  `pnpm install` before shipping.

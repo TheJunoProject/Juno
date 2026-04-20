@@ -501,7 +501,7 @@ describe("createJunoCodingTools", () => {
           path: "structured-write.js",
           content: [
             { type: "text", text: "const path = require('path');\n" },
-            { type: "input_text", text: "const root = path.join(process.env.HOME, 'junod');\n" },
+            { type: "input_text", text: "const root = path.join(process.env.HOME, 'juno');\n" },
           ],
         }),
       ).rejects.toThrow(/Missing required parameter: content/);

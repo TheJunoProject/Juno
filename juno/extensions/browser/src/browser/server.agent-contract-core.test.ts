@@ -495,7 +495,7 @@ describe("profile CRUD endpoints", () => {
     const createJunod = await realFetch(`${base}/profiles/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "legacyjunod", driver: "junod" }),
+      body: JSON.stringify({ name: "legacyjuno", driver: "juno" }),
     });
     expect(createJunod.status).toBe(200);
     const createJunodBody = (await createJunod.json()) as {
@@ -504,7 +504,7 @@ describe("profile CRUD endpoints", () => {
       cdpPort?: number | null;
       userDataDir?: string | null;
     };
-    expect(createJunodBody.profile).toBe("legacyjunod");
+    expect(createJunodBody.profile).toBe("legacyjuno");
     expect(createJunodBody.transport).toBe("cdp");
     expect(createJunodBody.cdpPort).toBeTypeOf("number");
     expect(createJunodBody.userDataDir).toBeNull();

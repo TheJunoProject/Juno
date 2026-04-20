@@ -109,8 +109,8 @@ const subCliCommandCatalog = defineCommandDescriptorCatalog([
     hasSubcommands: false,
   },
   {
-    name: "junobot",
-    description: "Legacy junobot command aliases",
+    name: "juno",
+    description: "Legacy juno command aliases",
     hasSubcommands: true,
   },
   {

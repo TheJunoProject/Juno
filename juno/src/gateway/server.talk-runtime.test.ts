@@ -213,7 +213,7 @@ describe("gateway talk runtime", () => {
 
         const res = await invokeTalkSpeakDirect({
           text: "Hello from talk mode.",
-          voiceId: "junod",
+          voiceId: "juno",
           outputFormat: "pcm_44100",
           latencyTier: 3,
         });

@@ -681,7 +681,7 @@ export const GENERATED_BASE_CONFIG_SCHEMA: BaseConfigSchemaResponse = {
                     },
                     {
                       type: "string",
-                      const: "junod",
+                      const: "juno",
                     },
                     {
                       type: "string",
@@ -690,7 +690,7 @@ export const GENERATED_BASE_CONFIG_SCHEMA: BaseConfigSchemaResponse = {
                   ],
                   title: "Browser Profile Driver",
                   description:
-                    'Per-profile browser driver mode. Use "juno" (or legacy "junod") for CDP-based profiles, or use "existing-session" for Chrome DevTools MCP attachment on the selected host or browser node.',
+                    'Per-profile browser driver mode. Use "juno" (or legacy "juno") for CDP-based profiles, or use "existing-session" for Chrome DevTools MCP attachment on the selected host or browser node.',
                 },
                 attachOnly: {
                   type: "boolean",
@@ -23588,7 +23588,7 @@ export const GENERATED_BASE_CONFIG_SCHEMA: BaseConfigSchemaResponse = {
     },
     "browser.profiles.*.driver": {
       label: "Browser Profile Driver",
-      help: 'Per-profile browser driver mode. Use "juno" (or legacy "junod") for CDP-based profiles, or use "existing-session" for Chrome DevTools MCP attachment on the selected host or browser node.',
+      help: 'Per-profile browser driver mode. Use "juno" (or legacy "juno") for CDP-based profiles, or use "existing-session" for Chrome DevTools MCP attachment on the selected host or browser node.',
       tags: ["storage"],
     },
     "browser.profiles.*.attachOnly": {

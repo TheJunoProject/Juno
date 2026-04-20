@@ -49,8 +49,8 @@ const JUNODBOT_GATEWAY_CONTENTS = `\
 [Unit]
 Description=Junodbot Gateway
 [Service]
-ExecStart=/usr/bin/node /opt/junodbot/dist/entry.js gateway --port 18789
-Environment=HOME=/home/junodbot
+ExecStart=/usr/bin/node /opt/juno/dist/entry.js gateway --port 18789
+Environment=HOME=/home/juno
 `;
 
 describe("detectMarkerLineWithGateway", () => {
@@ -62,8 +62,8 @@ describe("detectMarkerLineWithGateway", () => {
     expect(detectMarkerLineWithGateway(GATEWAY_SERVICE_CONTENTS)).toBe("juno");
   });
 
-  it("returns junodbot for a junodbot gateway unit", () => {
-    expect(detectMarkerLineWithGateway(JUNODBOT_GATEWAY_CONTENTS)).toBe("junodbot");
+  it("returns juno for a juno gateway unit", () => {
+    expect(detectMarkerLineWithGateway(JUNODBOT_GATEWAY_CONTENTS)).toBe("juno");
   });
 
   it("handles line continuations — marker and gateway split across physical lines", () => {
@@ -111,11 +111,11 @@ describe("findExtraGatewayServices (linux / scanSystemdDir) — real filesystem"
   );
 
   it.skipIf(!isLinux)(
-    "reports a legacy junodbot-gateway service as an extra gateway service",
+    "reports a legacy juno-gateway service as an extra gateway service",
     async () => {
       const tmpHome = await fs.mkdtemp(path.join(os.tmpdir(), "juno-test-"));
       const systemdDir = path.join(tmpHome, ".config", "systemd", "user");
-      const unitPath = path.join(systemdDir, "junodbot-gateway.service");
+      const unitPath = path.join(systemdDir, "juno-gateway.service");
       try {
         await fs.mkdir(systemdDir, { recursive: true });
         await fs.writeFile(unitPath, JUNODBOT_GATEWAY_CONTENTS);
@@ -123,10 +123,10 @@ describe("findExtraGatewayServices (linux / scanSystemdDir) — real filesystem"
         expect(result).toEqual([
           {
             platform: "linux",
-            label: "junodbot-gateway.service",
+            label: "juno-gateway.service",
             detail: `unit: ${unitPath}`,
             scope: "user",
-            marker: "junodbot",
+            marker: "juno",
             legacy: true,
           },
         ]);
@@ -180,7 +180,7 @@ describe("findExtraGatewayServices (win32)", () => {
         "Task To Run: C:\\Program Files\\Juno\\juno.exe gateway run",
         "",
         "TaskName: Junodbot Legacy",
-        "Task To Run: C:\\junodbot\\junodbot.exe run",
+        "Task To Run: C:\\juno\\juno.exe run",
         "",
         "TaskName: Other Task",
         "Task To Run: C:\\tools\\helper.exe",
@@ -194,9 +194,9 @@ describe("findExtraGatewayServices (win32)", () => {
       {
         platform: "win32",
         label: "Junodbot Legacy",
-        detail: "task: Junodbot Legacy, run: C:\\junodbot\\junodbot.exe run",
+        detail: "task: Junodbot Legacy, run: C:\\juno\\juno.exe run",
         scope: "system",
-        marker: "junodbot",
+        marker: "juno",
         legacy: true,
       },
     ]);

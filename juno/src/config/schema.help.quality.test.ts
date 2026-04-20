@@ -425,7 +425,7 @@ const ENUM_EXPECTATIONS: Record<string, string[]> = {
   "gateway.bind": ['"auto"', '"lan"', '"loopback"', '"custom"', '"tailnet"'],
   "gateway.auth.mode": ['"none"', '"token"', '"password"', '"trusted-proxy"'],
   "gateway.tailscale.mode": ['"off"', '"serve"', '"funnel"'],
-  "browser.profiles.*.driver": ['"juno"', '"junod"', '"existing-session"'],
+  "browser.profiles.*.driver": ['"juno"', '"juno"', '"existing-session"'],
   "discovery.mdns.mode": ['"off"', '"minimal"', '"full"'],
   "wizard.lastRunMode": ['"local"', '"remote"'],
   "diagnostics.otel.protocol": ['"http/protobuf"', '"grpc"'],

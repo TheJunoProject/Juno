@@ -40,11 +40,6 @@ export {
   resolveNativeCommandsEnabled,
   resolveNativeSkillsEnabled,
 } from "../config/commands.js";
-export {
-  TELEGRAM_COMMAND_NAME_PATTERN,
-  normalizeTelegramCommandName,
-  resolveTelegramCustomCommands,
-} from "./telegram-command-config.js";
 export { resolveActiveTalkProviderConfig } from "../config/talk.js";
 export { resolveAgentMaxConcurrent } from "../config/agent-limits.js";
 export { loadCronStore, resolveCronStorePath, saveCronStore } from "../cron/store.js";
@@ -57,15 +52,6 @@ export {
 } from "../gateway/resolve-configured-secret-input-string.js";
 export type {
   BlockStreamingCoalesceConfig,
-  DiscordAccountConfig,
-  DiscordActionConfig,
-  DiscordAutoPresenceConfig,
-  DiscordConfig,
-  DiscordExecApprovalConfig,
-  DiscordGuildChannelConfig,
-  DiscordGuildEntry,
-  DiscordIntentsConfig,
-  DiscordSlashCommandConfig,
   DmConfig,
   DmPolicy,
   ContextVisibilityMode,
@@ -76,19 +62,6 @@ export type {
   MarkdownTableMode,
   JunoConfig,
   ReplyToMode,
-  SignalReactionNotificationMode,
-  SlackAccountConfig,
-  SlackChannelConfig,
-  SlackReactionNotificationMode,
-  SlackSlashCommandConfig,
-  TelegramAccountConfig,
-  TelegramActionConfig,
-  TelegramDirectConfig,
-  TelegramExecApprovalConfig,
-  TelegramGroupConfig,
-  TelegramInlineButtonsScope,
-  TelegramNetworkConfig,
-  TelegramTopicConfig,
   TtsAutoMode,
   TtsConfig,
   TtsMode,

@@ -34,7 +34,7 @@ function Write-Host {
 
 function Write-Banner {
     Write-Host ""
-    Write-Host "${ACCENT}  🦞 Juno Installer$NC" -Level info
+    Write-Host "${ACCENT}  Juno Installer$NC" -Level info
     Write-Host "${MUTED}  All your chats, one Juno.$NC" -Level info
     Write-Host ""
 }
@@ -445,7 +445,7 @@ function Main {
     }
     
     Write-Host ""
-    Write-Host "🦞 Juno installed successfully!" -Level success
+    Write-Host "Juno installed successfully!" -Level success
 }
 
 Main

@@ -111,7 +111,7 @@ describe("registerSubCliCommands", () => {
     const names = program.commands.map((cmd) => cmd.name());
     expect(names).toContain("acp");
     expect(names).toContain("gateway");
-    expect(names).toContain("junobot");
+    expect(names).toContain("juno");
     expect(names).toContain("qa");
     expect(registerAcpCli).not.toHaveBeenCalled();
   });

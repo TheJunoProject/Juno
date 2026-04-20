@@ -607,16 +607,16 @@ describe("maybeScanExtraGatewayServices", () => {
     mocks.findExtraGatewayServices.mockResolvedValue([
       {
         platform: "linux",
-        label: "junodbot-gateway.service",
-        detail: "unit: /home/test/.config/systemd/user/junodbot-gateway.service",
+        label: "juno-gateway.service",
+        detail: "unit: /home/test/.config/systemd/user/juno-gateway.service",
         scope: "user",
         legacy: true,
       },
     ]);
     mocks.uninstallLegacySystemdUnits.mockResolvedValue([
       {
-        name: "junodbot-gateway",
-        unitPath: "/home/test/.config/systemd/user/junodbot-gateway.service",
+        name: "juno-gateway",
+        unitPath: "/home/test/.config/systemd/user/juno-gateway.service",
         enabled: true,
         exists: true,
       },
@@ -648,7 +648,7 @@ describe("maybeScanExtraGatewayServices", () => {
       stdout: process.stdout,
     });
     expect(mocks.note).toHaveBeenCalledWith(
-      expect.stringContaining("junodbot-gateway.service"),
+      expect.stringContaining("juno-gateway.service"),
       "Legacy gateway removed",
     );
     expect(runtime.log).toHaveBeenCalledWith(

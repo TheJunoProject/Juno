@@ -520,7 +520,7 @@ describe("loadCliDotEnv", () => {
     await withIsolatedEnvAndCwd(async () => {
       const base = await fs.mkdtemp(path.join(os.tmpdir(), "juno-dotenv-legacy-"));
       const cwdDir = path.join(base, "cwd");
-      const legacyStateDir = path.join(base, ".junodbot");
+      const legacyStateDir = path.join(base, ".juno");
       process.env.HOME = base;
       delete process.env.JUNO_STATE_DIR;
       delete process.env.JUNO_TEST_FAST;

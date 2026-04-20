@@ -370,7 +370,7 @@ describe("config identity/materialization regressions", () => {
             identity: {
               name: "Samantha Sloth",
               theme: "space lobster",
-              emoji: "🦞",
+              emoji: "",
             },
             groupChat: { mentionPatterns: ["@juno"] },
           },
@@ -528,7 +528,7 @@ describe("cron webhook schema", () => {
     });
     const messages = {
       messagePrefix: "[juno]",
-      responsePrefix: "🦞",
+      responsePrefix: "",
     };
 
     expect(whatsapp.success).toBe(true);

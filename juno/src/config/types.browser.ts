@@ -6,7 +6,7 @@ export type BrowserProfileConfig = {
   /** Explicit user data directory for existing-session Chrome MCP attachment. */
   userDataDir?: string;
   /** Profile driver (default: juno). */
-  driver?: "juno" | "junod" | "existing-session";
+  driver?: "juno" | "juno" | "existing-session";
   /** If true, never launch a browser for this profile; only attach. Falls back to browser.attachOnly. */
   attachOnly?: boolean;
   /** Profile color (hex). Auto-assigned at creation. */

@@ -110,7 +110,7 @@ async function submitVoyageBatch(params: {
         input_type: "document",
       },
       metadata: {
-        source: "junodbot-memory",
+        source: "juno-memory",
         agent: params.agentId,
       },
     },

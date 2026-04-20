@@ -1,4 +1,4 @@
-# 🦞 Juno — Personal AI Assistant
+# Juno — Personal AI Assistant
 
 <p align="center">
     <picture>
@@ -14,7 +14,7 @@
 <p align="center">
   <a href="https://github.com/juno/juno/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/juno/juno/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
   <a href="https://github.com/juno/juno/releases"><img src="https://img.shields.io/github/v/release/juno/juno?include_prereleases&style=for-the-badge" alt="GitHub release"></a>
-  <a href="https://discord.gg/junod"><img src="https://img.shields.io/discord/1456350064065904867?label=Discord&logo=discord&logoColor=white&color=5865F2&style=for-the-badge" alt="Discord"></a>
+  <a href="https://discord.gg/juno"><img src="https://img.shields.io/discord/1456350064065904867?label=Discord&logo=discord&logoColor=white&color=5865F2&style=for-the-badge" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
 
@@ -25,7 +25,7 @@ If you want a personal, single-user assistant that feels local, fast, and always
 
 Supported channels include: WhatsApp, Telegram, Slack, Discord, Google Chat, Signal, iMessage, BlueBubbles, IRC, Microsoft Teams, Matrix, Feishu, LINE, Mattermost, Nextcloud Talk, Nostr, Synology Chat, Tlon, Twitch, Zalo, Zalo Personal, WeChat, QQ, WebChat.
 
-[Website](https://juno.ai) · [Docs](https://docs.juno.ai) · [Vision](VISION.md) · [DeepWiki](https://deepwiki.com/juno/juno) · [Getting Started](https://docs.juno.ai/start/getting-started) · [Updating](https://docs.juno.ai/install/updating) · [Showcase](https://docs.juno.ai/start/showcase) · [FAQ](https://docs.juno.ai/help/faq) · [Onboarding](https://docs.juno.ai/start/wizard) · [Nix](https://github.com/juno/nix-juno) · [Docker](https://docs.juno.ai/install/docker) · [Discord](https://discord.gg/junod)
+[Website](https://juno.ai) · [Docs](https://docs.juno.ai) · [Vision](VISION.md) · [DeepWiki](https://deepwiki.com/juno/juno) · [Getting Started](https://docs.juno.ai/start/getting-started) · [Updating](https://docs.juno.ai/install/updating) · [Showcase](https://docs.juno.ai/start/showcase) · [FAQ](https://docs.juno.ai/help/faq) · [Onboarding](https://docs.juno.ai/start/wizard) · [Nix](https://github.com/juno/nix-juno) · [Docker](https://docs.juno.ai/install/docker) · [Discord](https://discord.gg/juno)
 
 New install? Start here: [Getting started](https://docs.juno.ai/start/getting-started)
 
@@ -276,8 +276,7 @@ Minimal `~/.juno/juno.json` (model + defaults):
 
 ## Juno
 
-Juno was built for **Juno**, a space lobster AI assistant. 🦞
-by Peter Steinberger and the community.
+Juno was built for **Juno**, a space lobster AI assistant. by Peter Steinberger and the community.
 
 - [juno.ai](https://juno.ai)
 - [soul.md](https://soul.md)

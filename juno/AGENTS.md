@@ -282,7 +282,7 @@
 - Never edit `node_modules` (global/Homebrew/npm/git installs too). Updates overwrite. Skill notes go in `tools.md` or `AGENTS.md`.
 - If you need local-only `.agents` ignores, use `.git/info/exclude` instead of repo `.gitignore`.
 - When adding a new `AGENTS.md` anywhere in the repo, also add a `CLAUDE.md` symlink pointing to it (example: `ln -s AGENTS.md CLAUDE.md`).
-- Signal: "update fly" => `fly ssh console -a flawd-bot -C "bash -lc 'cd /data/junod/juno && git pull --rebase origin main'"` then `fly machines restart e825232f34d058 -a flawd-bot`.
+- Signal: "update fly" => `fly ssh console -a flawd-bot -C "bash -lc 'cd /data/juno/juno && git pull --rebase origin main'"` then `fly machines restart e825232f34d058 -a flawd-bot`.
 - CLI progress: use `src/cli/progress.ts` (`osc-progress` + `@clack/prompts` spinner); don’t hand-roll spinners/bars.
 - Status output: keep tables + ANSI-safe wrapping (`src/terminal/table.ts`); `status --all` = read-only/pasteable, `status --deep` = probes.
 - Gateway may run as an app-managed launchd job. Restart the gateway via the app or `juno gateway restart`; inspect with `juno gateway status --deep` or, for the default profile, `launchctl print gui/$UID/ai.juno.gateway`. Use `scripts/restart-mac.sh` when you need to rebuild/relaunch the local macOS app itself. The app LaunchAgent uses `ai.juno.mac`. **When debugging on macOS, start/stop the gateway via the app or gateway CLI, not ad-hoc tmux sessions; kill any temporary tunnels before handoff.**

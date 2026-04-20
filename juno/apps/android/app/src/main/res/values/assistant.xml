@@ -1,7 +1,0 @@
-<resources>
-    <string-array name="ask_juno_query_patterns">
-        <item>ask Juno $prompt</item>
-        <item>tell Juno to $prompt</item>
-        <item>open Juno and ask $prompt</item>
-    </string-array>
-</resources>

@@ -286,7 +286,7 @@ const DIR_LINK_TYPE = process.platform === "win32" ? "junction" : "dir";
 function getStateDirMigrationPaths(root: string) {
   return {
     targetDir: path.join(root, ".juno"),
-    legacyDir: path.join(root, ".junodbot"),
+    legacyDir: path.join(root, ".juno"),
   };
 }
 

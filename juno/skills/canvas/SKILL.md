@@ -64,7 +64,7 @@ In the active Juno config file (`$JUNO_CONFIG_PATH`, default `~/.juno/juno.json`
   "canvasHost": {
     "enabled": true,
     "port": 18793,
-    "root": "/Users/you/junod/canvas",
+    "root": "/Users/you/juno/canvas",
     "liveReload": true
   },
   "gateway": {
@@ -87,10 +87,10 @@ Great for development!
 
 ### 1. Create HTML content
 
-Place files in the canvas root directory (default `~/junod/canvas/`):
+Place files in the canvas root directory (default `~/juno/canvas/`):
 
 ```bash
-cat > ~/junod/canvas/my-game.html << 'HTML'
+cat > ~/juno/canvas/my-game.html << 'HTML'
 <!DOCTYPE html>
 <html>
 <head><title>My Game</title></head>
@@ -184,8 +184,8 @@ If live reload isn't working:
 The canvas host serves from `/__juno__/canvas/` prefix:
 
 ```
-http://<host>:18793/__juno__/canvas/index.html  → ~/junod/canvas/index.html
-http://<host>:18793/__juno__/canvas/games/snake.html → ~/junod/canvas/games/snake.html
+http://<host>:18793/__juno__/canvas/index.html  → ~/juno/canvas/index.html
+http://<host>:18793/__juno__/canvas/games/snake.html → ~/juno/canvas/games/snake.html
 ```
 
 The `/__juno__/canvas/` prefix is defined by `CANVAS_HOST_PATH` constant.

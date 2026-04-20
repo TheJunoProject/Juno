@@ -5,7 +5,6 @@ import { formatHelpExamples } from "../help-format.js";
 import type { ProgramContext } from "./context.js";
 import { createMessageCliHelpers } from "./message/helpers.js";
 import { registerMessageBroadcastCommand } from "./message/register.broadcast.js";
-import { registerMessageDiscordAdminCommands } from "./message/register.discord-admin.js";
 import {
   registerMessageEmojiCommands,
   registerMessageStickerCommands,
@@ -64,5 +63,4 @@ ${theme.muted("Docs:")} ${formatDocsLink("/cli/message", "docs.juno.ai/cli/messa
   registerMessageThreadCommands(message, helpers);
   registerMessageEmojiCommands(message, helpers);
   registerMessageStickerCommands(message, helpers);
-  registerMessageDiscordAdminCommands(message, helpers);
 }

@@ -143,9 +143,9 @@ describe("state + config path candidates", () => {
     const candidates = resolveDefaultConfigCandidates({} as NodeJS.ProcessEnv, () => home);
     const expected = [
       path.join(resolvedHome, ".juno", "juno.json"),
-      path.join(resolvedHome, ".juno", "junodbot.json"),
-      path.join(resolvedHome, ".junodbot", "juno.json"),
-      path.join(resolvedHome, ".junodbot", "junodbot.json"),
+      path.join(resolvedHome, ".juno", "juno.json"),
+      path.join(resolvedHome, ".juno", "juno.json"),
+      path.join(resolvedHome, ".juno", "juno.json"),
     ];
     expect(candidates).toEqual(expected);
   });
@@ -161,7 +161,7 @@ describe("state + config path candidates", () => {
 
   it("falls back to existing legacy state dir when ~/.juno is missing", async () => {
     await withTempDir({ prefix: "juno-state-legacy-" }, async (root) => {
-      const legacyDir = path.join(root, ".junodbot");
+      const legacyDir = path.join(root, ".juno");
       await fs.mkdir(legacyDir, { recursive: true });
       const resolved = resolveStateDir({} as NodeJS.ProcessEnv, () => root);
       expect(resolved).toBe(legacyDir);

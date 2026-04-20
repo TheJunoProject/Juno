@@ -1312,7 +1312,7 @@ function messageAvatar(m: Message): { emoji: string; bg: string; role: string } 
   if (m.direction === "outbound") {
     return { emoji: "\uD83E\uDD80", bg: "#7c6cff", role: "Juno" }; // 🦀
   }
-  return { emoji: "\uD83E\uDD9E", bg: "#d97706", role: "Junofather" }; // 🦞
+  return { emoji: "\uD83E\uDD9E", bg: "#d97706", role: "Junofather" };
 }
 
 function renderMessage(m: Message): string {

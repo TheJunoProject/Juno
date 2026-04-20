@@ -221,7 +221,7 @@ ${theme.muted("Docs:")} ${formatDocsLink("/cli/agent", "docs.juno.ai/cli/agent")
         `
 ${theme.heading("Examples:")}
 ${formatHelpExamples([
-  ['juno agents set-identity --agent main --name "Juno" --emoji "🦞"', "Set name + emoji."],
+  ['juno agents set-identity --agent main --name "Juno" --emoji ""', "Set name + emoji."],
   ["juno agents set-identity --agent main --avatar avatars/juno.png", "Set avatar path."],
   [
     "juno agents set-identity --workspace ~/.juno/workspace --from-identity",

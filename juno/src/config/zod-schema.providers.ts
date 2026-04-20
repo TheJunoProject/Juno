@@ -10,7 +10,6 @@ import { ChannelHeartbeatVisibilitySchema } from "./zod-schema.channels.js";
 import { ContextVisibilityModeSchema, GroupPolicySchema } from "./zod-schema.core.js";
 
 export * from "./zod-schema.providers-core.js";
-export * from "./zod-schema.providers-whatsapp.js";
 export { ChannelHeartbeatVisibilitySchema } from "./zod-schema.channels.js";
 
 const ChannelModelByChannelSchema = z

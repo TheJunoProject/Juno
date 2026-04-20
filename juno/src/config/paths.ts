@@ -18,10 +18,10 @@ export function resolveIsNixMode(env: NodeJS.ProcessEnv = process.env): boolean 
 export const isNixMode = resolveIsNixMode();
 
 // Support the remaining legacy pre-rebrand state dir.
-const LEGACY_STATE_DIRNAMES = [".junodbot"] as const;
+const LEGACY_STATE_DIRNAMES = [".juno"] as const;
 const NEW_STATE_DIRNAME = ".juno";
 const CONFIG_FILENAME = "juno.json";
-const LEGACY_CONFIG_FILENAMES = ["junodbot.json"] as const;
+const LEGACY_CONFIG_FILENAMES = ["juno.json"] as const;
 
 function resolveDefaultHomeDir(): string {
   return resolveRequiredHomeDir(process.env, os.homedir);

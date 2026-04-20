@@ -337,7 +337,7 @@ export async function launchJunoChrome(
         name: profile.name,
         color: profile.color,
       });
-      log.info(`🦞 juno browser profile decorated (${profile.color})`);
+      log.info(`juno browser profile decorated (${profile.color})`);
     } catch (err) {
       log.warn(`juno browser profile decoration failed: ${String(err)}`);
     }
@@ -398,7 +398,7 @@ export async function launchJunoChrome(
 
   const pid = proc.pid ?? -1;
   log.info(
-    `🦞 juno browser started (${exe.kind}) profile "${profile.name}" on 127.0.0.1:${profile.cdpPort} (pid ${pid})`,
+    `juno browser started (${exe.kind}) profile "${profile.name}" on 127.0.0.1:${profile.cdpPort} (pid ${pid})`,
   );
 
   return {

@@ -132,6 +132,6 @@ describe("resolveGatewayServiceDescription", () => {
 
 describe("LEGACY_GATEWAY_SYSTEMD_SERVICE_NAMES", () => {
   it("includes known pre-rebrand gateway unit names", () => {
-    expect(LEGACY_GATEWAY_SYSTEMD_SERVICE_NAMES).toContain("junodbot-gateway");
+    expect(LEGACY_GATEWAY_SYSTEMD_SERVICE_NAMES).toContain("juno-gateway");
   });
 });

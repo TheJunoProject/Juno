@@ -20,7 +20,7 @@ async function withStateDirFixture(run: (root: string) => Promise<void>): Promis
 describe("legacy state dir auto-migration", () => {
   it("skips a legacy symlinked state dir when it points outside supported legacy roots", async () => {
     await withStateDirFixture(async (root) => {
-      const legacySymlink = path.join(root, ".junodbot");
+      const legacySymlink = path.join(root, ".juno");
       const legacyDir = path.join(root, "legacy-state-source");
 
       fs.mkdirSync(legacyDir, { recursive: true });
@@ -41,13 +41,13 @@ describe("legacy state dir auto-migration", () => {
       expect(fs.readFileSync(path.join(root, "legacy-state-source", "marker.txt"), "utf-8")).toBe(
         "ok",
       );
-      expect(fs.readFileSync(path.join(root, ".junodbot", "marker.txt"), "utf-8")).toBe("ok");
+      expect(fs.readFileSync(path.join(root, ".juno", "marker.txt"), "utf-8")).toBe("ok");
     });
   });
 
   it("skips state-dir migration when JUNO_STATE_DIR is explicitly set", async () => {
     await withStateDirFixture(async (root) => {
-      const legacyDir = path.join(root, ".junodbot");
+      const legacyDir = path.join(root, ".juno");
       fs.mkdirSync(legacyDir, { recursive: true });
 
       const result = await autoMigrateLegacyStateDir({
@@ -67,7 +67,7 @@ describe("legacy state dir auto-migration", () => {
 
   it("only runs once per process until reset", async () => {
     await withStateDirFixture(async (root) => {
-      const legacyDir = path.join(root, ".junodbot");
+      const legacyDir = path.join(root, ".juno");
       fs.mkdirSync(legacyDir, { recursive: true });
       fs.writeFileSync(path.join(legacyDir, "marker.txt"), "ok", "utf-8");
 

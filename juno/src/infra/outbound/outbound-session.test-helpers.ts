@@ -184,7 +184,7 @@ function resolveSlackOutboundSessionRouteForTest(params: ChannelOutboundSessionR
   const isGroupChannel =
     /^g/i.test(rawId) &&
     params.cfg.channels?.slack?.dm?.groupChannels?.some(
-      (candidate) => normalizeLowercaseStringOrEmpty(String(candidate)) === normalizedId,
+      (candidate: unknown) => normalizeLowercaseStringOrEmpty(String(candidate)) === normalizedId,
     ) === true;
   const peerKind: RoutePeer["kind"] = isDm ? "direct" : isGroupChannel ? "group" : "channel";
   return buildThreadedChannelRoute({

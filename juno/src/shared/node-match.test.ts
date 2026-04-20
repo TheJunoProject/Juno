@@ -47,14 +47,14 @@ describe("shared/node-match", () => {
     ).toBe("mac-studio");
   });
 
-  it("prefers a unique current Juno client over a legacy junodbot client", () => {
+  it("prefers a unique current Juno client over a legacy juno client", () => {
     expect(
       resolveNodeIdFromCandidates(
         [
           {
             nodeId: "legacy-mac",
             displayName: "Peter’s Mac Studio",
-            clientId: "junodbot-macos",
+            clientId: "juno-macos",
             connected: false,
           },
           {
@@ -112,7 +112,7 @@ describe("shared/node-match", () => {
           {
             nodeId: "legacy-mac",
             displayName: "Peter’s Mac Studio",
-            clientId: "junodbot-macos",
+            clientId: "juno-macos",
             connected: true,
           },
           {

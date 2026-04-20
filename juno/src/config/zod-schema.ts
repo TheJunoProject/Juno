@@ -387,7 +387,7 @@ export const JunoSchema = z
                 cdpUrl: z.string().optional(),
                 userDataDir: z.string().optional(),
                 driver: z
-                  .union([z.literal("juno"), z.literal("junod"), z.literal("existing-session")])
+                  .union([z.literal("juno"), z.literal("juno"), z.literal("existing-session")])
                   .optional(),
                 attachOnly: z.boolean().optional(),
                 color: HexColorSchema,

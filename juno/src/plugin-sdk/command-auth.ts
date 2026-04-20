@@ -5,7 +5,6 @@ import {
 } from "../auto-reply/command-status-builders.js";
 import type { JunoConfig } from "../config/types.juno.js";
 import { resolveDmGroupAccessWithLists } from "../security/dm-policy-shared.js";
-export { buildCommandsPaginationKeyboard } from "./telegram-command-ui.js";
 export {
   createPreCryptoDirectDmAuthorizer,
   resolveInboundDirectDmAccessWithRuntime,

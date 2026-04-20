@@ -49,7 +49,7 @@ function isCurrentJunoClient(clientId: string | undefined): boolean {
 
 function isLegacyJunodbotClient(clientId: string | undefined): boolean {
   const normalized = normalizeOptionalLowercaseString(clientId) ?? "";
-  return normalized.startsWith("junodbot-") || normalized.startsWith("moldbot-");
+  return normalized.startsWith("juno-") || normalized.startsWith("moldbot-");
 }
 
 function pickPreferredLegacyMigrationMatch(

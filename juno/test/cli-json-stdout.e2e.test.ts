@@ -8,9 +8,9 @@ describe("cli json stdout contract", () => {
   it("keeps `update status --json` stdout parseable even with legacy doctor preflight inputs", async () => {
     await withTempHome(
       async (tempHome) => {
-        const legacyDir = path.join(tempHome, ".junodbot");
+        const legacyDir = path.join(tempHome, ".juno");
         await fs.mkdir(legacyDir, { recursive: true });
-        await fs.writeFile(path.join(legacyDir, "junodbot.json"), "{}", "utf8");
+        await fs.writeFile(path.join(legacyDir, "juno.json"), "{}", "utf8");
 
         const env = {
           ...process.env,

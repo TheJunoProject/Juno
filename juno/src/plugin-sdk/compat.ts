@@ -60,9 +60,3 @@ export * from "./channel-policy.js";
 export * from "./reply-history.js";
 export * from "./directory-runtime.js";
 export { mapAllowlistResolutionInputs } from "./allow-from.js";
-
-export {
-  resolveBlueBubblesGroupRequireMention,
-  resolveBlueBubblesGroupToolPolicy,
-} from "./bluebubbles-policy.js";
-export { collectBlueBubblesStatusIssues } from "./bluebubbles.js";
