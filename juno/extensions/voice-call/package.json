@@ -1,0 +1,41 @@
+{
+  "name": "@juno/voice-call",
+  "version": "2026.4.20",
+  "description": "Juno voice-call plugin",
+  "type": "module",
+  "dependencies": {
+    "@sinclair/typebox": "0.34.49",
+    "commander": "^14.0.3",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*",
+    "juno": "workspace:*"
+  },
+  "peerDependencies": {
+    "juno": ">=2026.4.20"
+  },
+  "peerDependenciesMeta": {
+    "juno": {
+      "optional": true
+    }
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "install": {
+      "minHostVersion": ">=2026.4.10"
+    },
+    "compat": {
+      "pluginApi": ">=2026.4.20"
+    },
+    "build": {
+      "junoVersion": "2026.4.20"
+    },
+    "release": {
+      "publishToJunoHub": true,
+      "publishToNpm": true
+    }
+  }
+}

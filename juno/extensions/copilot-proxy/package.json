@@ -1,0 +1,15 @@
+{
+  "name": "@juno/copilot-proxy",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno Copilot Proxy provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

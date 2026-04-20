@@ -1,0 +1,276 @@
+name: Plugin JunoHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_scope:
+        description: Publish the selected plugins or all JunoHub-publishable plugins from the workflow ref
+        required: true
+        default: selected
+        type: choice
+        options:
+          - selected
+          - all-publishable
+      plugins:
+        description: Comma-separated plugin package names to publish when publish_scope=selected
+        required: false
+        type: string
+
+concurrency:
+  group: plugin-junohub-release-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  NODE_VERSION: "24.x"
+  PNPM_VERSION: "10.32.1"
+  JUNOHUB_REGISTRY: "https://junohub.ai"
+  JUNOHUB_REPOSITORY: "juno/junohub"
+  # Pinned to a reviewed JunoHub commit so release behavior stays reproducible.
+  JUNOHUB_REF: "4af2bd50a71465683dbf8aa269af764b9d39bdf5"
+
+jobs:
+  preview_plugins_junohub:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      ref_sha: ${{ steps.ref.outputs.sha }}
+      has_candidates: ${{ steps.plan.outputs.has_candidates }}
+      candidate_count: ${{ steps.plan.outputs.candidate_count }}
+      skipped_published_count: ${{ steps.plan.outputs.skipped_published_count }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          install-bun: "false"
+          use-sticky-disk: "false"
+
+      - name: Resolve checked-out ref
+        id: ref
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Validate ref is on main
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          git merge-base --is-ancestor HEAD origin/main
+
+      - name: Validate publishable plugin metadata
+        env:
+          PUBLISH_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_scope || '' }}
+          RELEASE_PLUGINS: ${{ github.event_name == 'workflow_dispatch' && inputs.plugins || '' }}
+          BASE_REF: ${{ github.event_name != 'workflow_dispatch' && github.event.before || '' }}
+          HEAD_REF: ${{ steps.ref.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${PUBLISH_SCOPE}" ]]; then
+            release_args=(--selection-mode "${PUBLISH_SCOPE}")
+            if [[ -n "${RELEASE_PLUGINS}" ]]; then
+              release_args+=(--plugins "${RELEASE_PLUGINS}")
+            fi
+            pnpm release:plugins:junohub:check -- "${release_args[@]}"
+          elif [[ -n "${BASE_REF}" ]]; then
+            pnpm release:plugins:junohub:check -- --base-ref "${BASE_REF}" --head-ref "${HEAD_REF}"
+          else
+            pnpm release:plugins:junohub:check
+          fi
+
+      - name: Resolve plugin release plan
+        id: plan
+        env:
+          PUBLISH_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_scope || '' }}
+          RELEASE_PLUGINS: ${{ github.event_name == 'workflow_dispatch' && inputs.plugins || '' }}
+          BASE_REF: ${{ github.event_name != 'workflow_dispatch' && github.event.before || '' }}
+          HEAD_REF: ${{ steps.ref.outputs.sha }}
+          JUNOHUB_REGISTRY: ${{ env.JUNOHUB_REGISTRY }}
+        run: |
+          set -euo pipefail
+          mkdir -p .local
+          if [[ -n "${PUBLISH_SCOPE}" ]]; then
+            plan_args=(--selection-mode "${PUBLISH_SCOPE}")
+            if [[ -n "${RELEASE_PLUGINS}" ]]; then
+              plan_args+=(--plugins "${RELEASE_PLUGINS}")
+            fi
+            node --import tsx scripts/plugin-junohub-release-plan.ts "${plan_args[@]}" > .local/plugin-junohub-release-plan.json
+          elif [[ -n "${BASE_REF}" ]]; then
+            node --import tsx scripts/plugin-junohub-release-plan.ts --base-ref "${BASE_REF}" --head-ref "${HEAD_REF}" > .local/plugin-junohub-release-plan.json
+          else
+            node --import tsx scripts/plugin-junohub-release-plan.ts > .local/plugin-junohub-release-plan.json
+          fi
+
+          cat .local/plugin-junohub-release-plan.json
+
+          candidate_count="$(jq -r '.candidates | length' .local/plugin-junohub-release-plan.json)"
+          skipped_published_count="$(jq -r '.skippedPublished | length' .local/plugin-junohub-release-plan.json)"
+          has_candidates="false"
+          if [[ "${candidate_count}" != "0" ]]; then
+            has_candidates="true"
+          fi
+          matrix_json="$(jq -c '.candidates' .local/plugin-junohub-release-plan.json)"
+
+          {
+            echo "candidate_count=${candidate_count}"
+            echo "skipped_published_count=${skipped_published_count}"
+            echo "has_candidates=${has_candidates}"
+            echo "matrix=${matrix_json}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Plugin release candidates:"
+          jq -r '.candidates[]? | "- \(.packageName)@\(.version) [\(.publishTag)] from \(.packageDir)"' .local/plugin-junohub-release-plan.json
+
+          echo "Already published / skipped:"
+          jq -r '.skippedPublished[]? | "- \(.packageName)@\(.version)"' .local/plugin-junohub-release-plan.json
+
+      - name: Fail manual publish when target versions already exist
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_scope == 'selected' && steps.plan.outputs.skipped_published_count != '0'
+        run: |
+          echo "::error::One or more selected plugin versions already exist on JunoHub. Bump the version before running a real publish."
+          exit 1
+
+  preview_plugin_pack:
+    needs: preview_plugins_junohub
+    if: needs.preview_plugins_junohub.outputs.has_candidates == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJson(needs.preview_plugins_junohub.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.preview_plugins_junohub.outputs.ref_sha }}
+          fetch-depth: 1
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          install-bun: "true"
+          use-sticky-disk: "false"
+          install-deps: "false"
+
+      - name: Checkout JunoHub CLI source
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.JUNOHUB_REPOSITORY }}
+          ref: ${{ env.JUNOHUB_REF }}
+          path: junohub-source
+          fetch-depth: 1
+
+      - name: Install JunoHub CLI dependencies
+        working-directory: junohub-source
+        run: bun install --frozen-lockfile
+
+      - name: Bootstrap JunoHub CLI
+        run: |
+          cat > "$RUNNER_TEMP/junohub" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec bun "$GITHUB_WORKSPACE/junohub-source/packages/junohub/src/cli.ts" "$@"
+          EOF
+          chmod +x "$RUNNER_TEMP/junohub"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Preview publish command
+        env:
+          JUNOHUB_REGISTRY: ${{ env.JUNOHUB_REGISTRY }}
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_COMMIT: ${{ needs.preview_plugins_junohub.outputs.ref_sha }}
+          SOURCE_REF: ${{ github.ref }}
+          PACKAGE_TAG: ${{ matrix.plugin.publishTag }}
+          PACKAGE_DIR: ${{ matrix.plugin.packageDir }}
+        run: bash scripts/plugin-junohub-publish.sh --dry-run "${PACKAGE_DIR}"
+
+  publish_plugins_junohub:
+    needs: [preview_plugins_junohub, preview_plugin_pack]
+    if: github.event_name == 'workflow_dispatch' && needs.preview_plugins_junohub.outputs.has_candidates == 'true'
+    runs-on: ubuntu-latest
+    environment: junohub-plugin-release
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJson(needs.preview_plugins_junohub.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.preview_plugins_junohub.outputs.ref_sha }}
+          fetch-depth: 1
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+          install-bun: "true"
+          use-sticky-disk: "false"
+          install-deps: "false"
+
+      - name: Checkout JunoHub CLI source
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.JUNOHUB_REPOSITORY }}
+          ref: ${{ env.JUNOHUB_REF }}
+          path: junohub-source
+          fetch-depth: 1
+
+      - name: Install JunoHub CLI dependencies
+        working-directory: junohub-source
+        run: bun install --frozen-lockfile
+
+      - name: Bootstrap JunoHub CLI
+        run: |
+          cat > "$RUNNER_TEMP/junohub" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec bun "$GITHUB_WORKSPACE/junohub-source/packages/junohub/src/cli.ts" "$@"
+          EOF
+          chmod +x "$RUNNER_TEMP/junohub"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Ensure version is not already published
+        env:
+          PACKAGE_NAME: ${{ matrix.plugin.packageName }}
+          PACKAGE_VERSION: ${{ matrix.plugin.version }}
+          JUNOHUB_REGISTRY: ${{ env.JUNOHUB_REGISTRY }}
+        run: |
+          set -euo pipefail
+          encoded_name="$(node -e 'console.log(encodeURIComponent(process.env.PACKAGE_NAME ?? ""))')"
+          encoded_version="$(node -e 'console.log(encodeURIComponent(process.env.PACKAGE_VERSION ?? ""))')"
+          url="${JUNOHUB_REGISTRY%/}/api/v1/packages/${encoded_name}/versions/${encoded_version}"
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "${url}")"
+          if [[ "${status}" =~ ^2 ]]; then
+            echo "${PACKAGE_NAME}@${PACKAGE_VERSION} is already published on JunoHub."
+            exit 1
+          fi
+          if [[ "${status}" != "404" ]]; then
+            echo "Unexpected JunoHub response (${status}) for ${PACKAGE_NAME}@${PACKAGE_VERSION}."
+            exit 1
+          fi
+
+      - name: Publish
+        env:
+          JUNOHUB_REGISTRY: ${{ env.JUNOHUB_REGISTRY }}
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_COMMIT: ${{ needs.preview_plugins_junohub.outputs.ref_sha }}
+          SOURCE_REF: ${{ github.ref }}
+          PACKAGE_TAG: ${{ matrix.plugin.publishTag }}
+          PACKAGE_DIR: ${{ matrix.plugin.packageDir }}
+        run: bash scripts/plugin-junohub-publish.sh --publish "${PACKAGE_DIR}"

@@ -1,0 +1,15 @@
+{
+  "name": "@juno/vydra-provider",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno Vydra media provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

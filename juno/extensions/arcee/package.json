@@ -1,0 +1,15 @@
+{
+  "name": "@juno/arcee-provider",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno Arcee provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

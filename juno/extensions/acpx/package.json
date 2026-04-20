@@ -1,0 +1,17 @@
+{
+  "name": "@juno/acpx",
+  "version": "2026.4.20",
+  "description": "Juno ACP runtime backend",
+  "type": "module",
+  "dependencies": {
+    "acpx": "0.5.3"
+  },
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

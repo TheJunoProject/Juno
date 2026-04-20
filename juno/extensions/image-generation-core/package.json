@@ -1,0 +1,10 @@
+{
+  "name": "@juno/image-generation-core",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno image generation runtime package",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  }
+}

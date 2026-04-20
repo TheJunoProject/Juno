@@ -1,0 +1,17 @@
+// Copy to LocalSigning.xcconfig for personal local signing overrides.
+// This file is only an example and should stay committed.
+
+JUNO_CODE_SIGN_STYLE = Automatic
+JUNO_DEVELOPMENT_TEAM = YOUR_TEAM_ID
+
+JUNO_APP_BUNDLE_ID = ai.juno.client
+JUNO_SHARE_BUNDLE_ID = ai.juno.client.share
+JUNO_ACTIVITY_WIDGET_BUNDLE_ID = ai.juno.client.activitywidget
+JUNO_WATCH_APP_BUNDLE_ID = ai.juno.client.watchkitapp
+JUNO_WATCH_EXTENSION_BUNDLE_ID = ai.juno.client.watchkitapp.extension
+
+// Leave empty with automatic signing.
+JUNO_APP_PROFILE =
+JUNO_SHARE_PROFILE =
+JUNO_WATCH_APP_PROFILE =
+JUNO_WATCH_EXTENSION_PROFILE =

@@ -1,0 +1,15 @@
+{
+  "name": "@juno/groq-provider",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno Groq media-understanding provider",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

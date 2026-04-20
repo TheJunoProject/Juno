@@ -1,0 +1,24 @@
+{
+  "name": "@juno/memory-core",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno core memory search plugin",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*",
+    "juno": "workspace:*"
+  },
+  "peerDependencies": {
+    "juno": ">=2026.4.20"
+  },
+  "peerDependenciesMeta": {
+    "juno": {
+      "optional": true
+    }
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

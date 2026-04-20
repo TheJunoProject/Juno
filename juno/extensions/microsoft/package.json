@@ -1,0 +1,18 @@
+{
+  "name": "@juno/microsoft-speech",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno Microsoft speech plugin",
+  "type": "module",
+  "dependencies": {
+    "node-edge-tts": "^1.2.10"
+  },
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@juno/elevenlabs-speech",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno ElevenLabs speech plugin",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

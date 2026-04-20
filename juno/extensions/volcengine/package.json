@@ -1,0 +1,15 @@
+{
+  "name": "@juno/volcengine-provider",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno Volcengine provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

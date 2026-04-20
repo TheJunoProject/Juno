@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: juno
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: JUNO_GATEWAY_PORT
+        value: "8080"
+      - key: JUNO_STATE_DIR
+        value: /data/.juno
+      - key: JUNO_WORKSPACE_DIR
+        value: /data/workspace
+      - key: JUNO_GATEWAY_TOKEN
+        generateValue: true
+    disk:
+      name: juno-data
+      mountPath: /data
+      sizeGB: 1

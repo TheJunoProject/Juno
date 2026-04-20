@@ -1,0 +1,76 @@
+{
+  "extends": "../tsconfig.package-boundary.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {
+      "juno/extension-api": ["../../src/extensionAPI.ts"],
+      "juno/plugin-sdk": ["../../dist/plugin-sdk/src/plugin-sdk/index.d.ts"],
+      "juno/plugin-sdk/*": ["../../dist/plugin-sdk/src/plugin-sdk/*.d.ts"],
+      "juno/plugin-sdk/account-id": ["../../dist/plugin-sdk/src/plugin-sdk/account-id.d.ts"],
+      "juno/plugin-sdk/channel-entry-contract": [
+        "../../dist/plugin-sdk/src/plugin-sdk/channel-entry-contract.d.ts"
+      ],
+      "juno/plugin-sdk/browser-maintenance": [
+        "../../dist/plugin-sdk/src/plugin-sdk/browser-maintenance.d.ts"
+      ],
+      "juno/plugin-sdk/browser-config-runtime": [
+        "../../dist/plugin-sdk/src/plugin-sdk/browser-config-runtime.d.ts"
+      ],
+      "juno/plugin-sdk/browser-node-runtime": [
+        "../../dist/plugin-sdk/src/plugin-sdk/browser-node-runtime.d.ts"
+      ],
+      "juno/plugin-sdk/browser-setup-tools": [
+        "../../dist/plugin-sdk/src/plugin-sdk/browser-setup-tools.d.ts"
+      ],
+      "juno/plugin-sdk/browser-security-runtime": [
+        "../../dist/plugin-sdk/src/plugin-sdk/browser-security-runtime.d.ts"
+      ],
+      "juno/plugin-sdk/channel-secret-runtime": [
+        "../../dist/plugin-sdk/src/plugin-sdk/channel-secret-runtime.d.ts"
+      ],
+      "juno/plugin-sdk/channel-streaming": [
+        "../../dist/plugin-sdk/src/plugin-sdk/channel-streaming.d.ts"
+      ],
+      "juno/plugin-sdk/cli-runtime": ["../../dist/plugin-sdk/src/plugin-sdk/cli-runtime.d.ts"],
+      "juno/plugin-sdk/error-runtime": [
+        "../../dist/plugin-sdk/src/plugin-sdk/error-runtime.d.ts"
+      ],
+      "juno/plugin-sdk/provider-catalog-shared": [
+        "../../dist/plugin-sdk/src/plugin-sdk/provider-catalog-shared.d.ts"
+      ],
+      "juno/plugin-sdk/provider-env-vars": [
+        "../../dist/plugin-sdk/src/plugin-sdk/provider-env-vars.d.ts"
+      ],
+      "juno/plugin-sdk/provider-entry": [
+        "../../dist/plugin-sdk/src/plugin-sdk/provider-entry.d.ts"
+      ],
+      "juno/plugin-sdk/provider-web-search-contract": [
+        "../../dist/plugin-sdk/src/plugin-sdk/provider-web-search-contract.d.ts"
+      ],
+      "juno/plugin-sdk/secret-ref-runtime": [
+        "../../dist/plugin-sdk/src/plugin-sdk/secret-ref-runtime.d.ts"
+      ],
+      "juno/plugin-sdk/ssrf-runtime": [
+        "../../dist/plugin-sdk/src/plugin-sdk/ssrf-runtime.d.ts"
+      ],
+      "@juno/qa-channel/api.js": ["../../dist/plugin-sdk/extensions/qa-channel/api.d.ts"],
+      "@juno/*.js": ["../../packages/plugin-sdk/dist/extensions/*.d.ts", "../*"],
+      "@juno/*": ["../*"],
+      "@juno/plugin-sdk/*": ["../../dist/plugin-sdk/src/plugin-sdk/*.d.ts"],
+      "@juno/anthropic-vertex/api.js": ["./.boundary-stubs/anthropic-vertex-api.d.ts"],
+      "@juno/ollama/api.js": ["./.boundary-stubs/ollama-api.d.ts"],
+      "@juno/ollama/runtime-api.js": ["./.boundary-stubs/ollama-runtime-api.d.ts"],
+      "@juno/speech-core/runtime-api.js": ["./.boundary-stubs/speech-core-runtime-api.d.ts"]
+    }
+  },
+  "include": ["./*.ts", "./src/**/*.ts"],
+  "exclude": [
+    "./**/*.test.ts",
+    "./dist/**",
+    "./node_modules/**",
+    "./src/test-support/**",
+    "./src/**/*test-helpers.ts",
+    "./src/**/*test-harness.ts",
+    "./src/**/*test-support.ts"
+  ]
+}

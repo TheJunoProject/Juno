@@ -1,0 +1,10 @@
+import type { JunoConfig } from "../../config/types.juno.js";
+import type { GetReplyOptions } from "../get-reply-options.types.js";
+import type { ReplyPayload } from "../reply-payload.js";
+import type { MsgContext } from "../templating.js";
+
+export type GetReplyFromConfig = (
+  ctx: MsgContext,
+  opts?: GetReplyOptions,
+  configOverride?: JunoConfig,
+) => Promise<ReplyPayload | ReplyPayload[] | undefined>;

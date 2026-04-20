@@ -1,0 +1,32 @@
+# Juno gateway — Podman Quadlet (rootless)
+# Installed by scripts/podman/setup.sh into the current user's ~/.config/containers/systemd/
+# {{JUNO_HOME}}, {{JUNO_CONFIG_DIR}}, {{JUNO_WORKSPACE_DIR}},
+# {{IMAGE_NAME}}, and {{CONTAINER_NAME}} are replaced at install time.
+
+[Unit]
+Description=Juno gateway (rootless Podman)
+
+[Container]
+Image={{IMAGE_NAME}}
+ContainerName={{CONTAINER_NAME}}
+UserNS=keep-id
+# Keep container UID/GID aligned with the invoking user so mounted config is readable.
+User=%U:%G
+Volume={{JUNO_CONFIG_DIR}}:/home/node/.juno:Z
+Volume={{JUNO_WORKSPACE_DIR}}:/home/node/.juno/workspace:Z
+EnvironmentFile={{JUNO_CONFIG_DIR}}/.env
+Environment=HOME=/home/node
+Environment=TERM=xterm-256color
+Environment=NPM_CONFIG_CACHE=/home/node/.juno/.npm
+Environment=JUNO_NO_RESPAWN=1
+PublishPort=127.0.0.1:18789:18789
+PublishPort=127.0.0.1:18790:18790
+Pull=never
+Exec=node dist/index.js gateway --bind lan --port 18789
+
+[Service]
+TimeoutStartSec=300
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

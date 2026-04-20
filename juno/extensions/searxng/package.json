@@ -1,0 +1,15 @@
+{
+  "name": "@juno/searxng-plugin",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno SearXNG plugin",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

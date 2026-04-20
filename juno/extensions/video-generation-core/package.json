@@ -1,0 +1,10 @@
+{
+  "name": "@juno/video-generation-core",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno video generation runtime package",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  }
+}

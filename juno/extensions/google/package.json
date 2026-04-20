@@ -1,0 +1,21 @@
+{
+  "name": "@juno/google-plugin",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno Google plugin",
+  "type": "module",
+  "dependencies": {
+    "@google/genai": "^1.50.1"
+  },
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "bundle": {
+      "stageRuntimeDependencies": true
+    },
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

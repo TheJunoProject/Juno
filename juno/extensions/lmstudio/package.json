@@ -1,0 +1,12 @@
+{
+  "name": "@juno/lmstudio-provider",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno LM Studio provider plugin",
+  "type": "module",
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

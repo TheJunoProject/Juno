@@ -1,0 +1,15 @@
+{
+  "name": "@juno/perplexity-plugin",
+  "version": "2026.4.20",
+  "private": true,
+  "description": "Juno Perplexity plugin",
+  "type": "module",
+  "devDependencies": {
+    "@juno/plugin-sdk": "workspace:*"
+  },
+  "juno": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
