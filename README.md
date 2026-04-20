@@ -80,11 +80,3 @@ Interactive layer reads these on every conversation
 - Pulls certain meaningful UI elements
 - Can seamlessly create markdown pages 
 
-
-# MechaTrotsky to Spread Red Terror
-
-## Core Idea
-- Uncensored model that's trained to obey all requests as well as be fine-tuned on certain special tasks and research capabilities
-
-## How to Make It Work
-I could either build the model from scratch or work from another model like Gemma4 and jailbreak it and then use LoRA and fine-tuning as well as adding context.
