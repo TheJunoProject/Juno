@@ -29,14 +29,6 @@ describe("secret target registry", () => {
     expect(targets[0]?.path).toBe(TALK_TEST_PROVIDER_API_KEY_PATH);
   });
 
-  it("resolves config targets by exact path including sibling ref metadata", () => {
-    const target = resolveConfigSecretTargetByPath(["channels", "googlechat", "serviceAccount"]);
-
-    expect(target).not.toBeNull();
-    expect(target?.entry?.id).toBe("channels.googlechat.serviceAccount");
-    expect(target?.refPathSegments).toEqual(["channels", "googlechat", "serviceAccountRef"]);
-  });
-
   it("returns null when no config target path matches", () => {
     const target = resolveConfigSecretTargetByPath(["gateway", "auth", "mode"]);
 

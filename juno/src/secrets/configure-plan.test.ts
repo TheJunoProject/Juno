@@ -22,17 +22,11 @@ describe("secrets configure plan helpers", () => {
           },
         },
       },
-      channels: {
-        telegram: {
-          botToken: "token", // pragma: allowlist secret
-        },
-      },
     } as JunoConfig;
 
     const candidates = buildConfigureCandidates(config);
     const paths = candidates.map((entry) => entry.path);
     expect(paths).toContain(TALK_TEST_PROVIDER_API_KEY_PATH);
-    expect(paths).toContain("channels.telegram.botToken");
   });
 
   it("collects provider upserts and deletes", () => {

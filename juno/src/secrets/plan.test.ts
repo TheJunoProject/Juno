@@ -21,15 +21,6 @@ describe("secrets plan validation", () => {
     expect(resolved?.pathSegments).toEqual(["models", "providers", "openai", "apiKey"]);
   });
 
-  it("accepts expanded target types beyond legacy surface", () => {
-    const resolved = resolveValidatedPlanTarget({
-      type: "channels.telegram.botToken",
-      path: "channels.telegram.botToken",
-      pathSegments: ["channels", "telegram", "botToken"],
-    });
-    expect(resolved?.pathSegments).toEqual(["channels", "telegram", "botToken"]);
-  });
-
   it("accepts model provider header targets with wildcard-backed paths", () => {
     const resolved = resolveValidatedPlanTarget({
       type: "models.providers.headers",

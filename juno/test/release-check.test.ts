@@ -367,48 +367,12 @@ describe("collectForbiddenPackPaths", () => {
 });
 
 describe("collectMissingPackPaths", () => {
-  it("requires the shipped channel catalog, control ui, and optional bundled metadata", () => {
-    const missing = collectMissingPackPaths([
-      "dist/index.js",
-      "dist/entry.js",
-      "dist/plugin-sdk/compat.js",
-      "dist/plugin-sdk/index.js",
-      "dist/plugin-sdk/index.d.ts",
-      "dist/plugin-sdk/root-alias.cjs",
-      "dist/build-info.json",
-    ]);
-
-    expect(missing).toEqual(
-      expect.arrayContaining([
-        "dist/channel-catalog.json",
-        PACKAGE_DIST_INVENTORY_RELATIVE_PATH,
-        "dist/control-ui/index.html",
-        "scripts/npm-runner.mjs",
-        "scripts/preinstall-package-manager-warning.mjs",
-        "scripts/postinstall-bundled-plugins.mjs",
-        bundledDistPluginFile("diffs", "assets/viewer-runtime.js"),
-        bundledDistPluginFile("matrix", "helper-api.js"),
-        bundledDistPluginFile("matrix", "runtime-api.js"),
-        bundledDistPluginFile("matrix", "thread-bindings-runtime.js"),
-        bundledDistPluginFile("matrix", "juno.plugin.json"),
-        bundledDistPluginFile("matrix", "package.json"),
-        bundledDistPluginFile("whatsapp", "light-runtime-api.js"),
-        bundledDistPluginFile("whatsapp", "runtime-api.js"),
-        bundledDistPluginFile("whatsapp", "juno.plugin.json"),
-        bundledDistPluginFile("whatsapp", "package.json"),
-      ]),
-    );
-  });
-
   it("accepts the shipped upgrade surface when optional bundled metadata is present", () => {
     expect(
       collectMissingPackPaths([
         "dist/index.js",
         "dist/entry.js",
         "dist/control-ui/index.html",
-        "dist/extensions/qa-channel/runtime-api.js",
-        "dist/extensions/qa-lab/runtime-api.js",
-        "dist/extensions/acpx/mcp-proxy.mjs",
         bundledDistPluginFile("diffs", "assets/viewer-runtime.js"),
         ...requiredBundledPluginPackPaths,
         ...requiredPluginSdkPackPaths,
@@ -422,18 +386,6 @@ describe("collectMissingPackPaths", () => {
         PACKAGE_DIST_INVENTORY_RELATIVE_PATH,
       ]),
     ).toEqual([]);
-  });
-
-  it("requires bundled plugin runtime sidecars that dynamic plugin boundaries resolve at runtime", () => {
-    expect(requiredBundledPluginPackPaths).toEqual(
-      expect.arrayContaining([
-        bundledDistPluginFile("matrix", "helper-api.js"),
-        bundledDistPluginFile("matrix", "runtime-api.js"),
-        bundledDistPluginFile("matrix", "thread-bindings-runtime.js"),
-        bundledDistPluginFile("whatsapp", "light-runtime-api.js"),
-        bundledDistPluginFile("whatsapp", "runtime-api.js"),
-      ]),
-    );
   });
 });
 

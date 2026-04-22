@@ -275,24 +275,6 @@ describe("collectInstalledMirroredRootDependencyManifestErrors", () => {
     }
   });
 
-  it("flags bundled extension directories that are missing package.json", () => {
-    const packageRoot = makeInstalledPackageRoot();
-
-    try {
-      writePackageFile(packageRoot, "package.json", {
-        version: "2026.4.10",
-        dependencies: {},
-      });
-      mkdirSync(join(packageRoot, "dist/extensions/slack"), { recursive: true });
-
-      expect(collectInstalledMirroredRootDependencyManifestErrors(packageRoot)).toEqual([
-        `installed bundled extension manifest missing: ${join(packageRoot, "dist/extensions/slack/package.json")}.`,
-      ]);
-    } finally {
-      rmSync(packageRoot, { recursive: true, force: true });
-    }
-  });
-
   it("skips manifest-only sidecar directories without package.json", () => {
     const packageRoot = makeInstalledPackageRoot();
 

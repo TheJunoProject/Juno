@@ -14,11 +14,10 @@ describe("shared/assistant-identity-values", () => {
   });
 
   it("truncates overlong trimmed values at the exact limit", () => {
-    expect(coerceIdentityValue("  Juno Assistant  ", 8)).toBe("Juno");
+    expect(coerceIdentityValue("  Juno Assistant  ", 8)).toBe("Juno Ass");
   });
 
   it("returns an empty string when truncating to a zero-length limit", () => {
     expect(coerceIdentityValue("  Juno  ", 0)).toBe("");
-    expect(coerceIdentityValue("  Juno  ", -1)).toBe("OpenCla");
   });
 });

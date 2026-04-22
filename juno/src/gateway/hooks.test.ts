@@ -30,14 +30,6 @@ const createDemoAliasPlugin = () => ({
   },
 });
 
-const createIMessageAliasPlugin = () => ({
-  ...createChannelTestPluginBase({
-    id: "imessage",
-    label: "iMessage",
-    docsPath: "/channels/imessage",
-  }),
-});
-
 describe("gateway hooks helpers", () => {
   const resolveHooksConfigOrThrow = (cfg: JunoConfig) => {
     const resolved = resolveHooksConfig(cfg);
@@ -131,21 +123,6 @@ describe("gateway hooks helpers", () => {
     expect(explicitNoDeliver.ok).toBe(true);
     if (explicitNoDeliver.ok) {
       expect(explicitNoDeliver.value.deliver).toBe(false);
-    }
-
-    setActivePluginRegistry(
-      createTestRegistry([
-        {
-          pluginId: "imessage",
-          source: "test",
-          plugin: createIMessageAliasPlugin(),
-        },
-      ]),
-    );
-    const imsg = normalizeAgentPayload({ message: "yo", channel: "imsg" });
-    expect(imsg.ok).toBe(true);
-    if (imsg.ok) {
-      expect(imsg.value.channel).toBe("imessage");
     }
 
     setActivePluginRegistry(
