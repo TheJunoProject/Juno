@@ -1,6 +1,0 @@
-interface:
-  display_name: "Juno Test Performance"
-  short_description: "Benchmark and fix slow Juno tests"
-  default_prompt: "Use $juno-test-performance to reassess the Juno test benchmark, identify the next real hotspot, fix it without losing coverage, update the report, and commit scoped changes."
-policy:
-  allow_implicit_invocation: false
