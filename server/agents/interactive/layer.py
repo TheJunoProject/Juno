@@ -20,7 +20,10 @@ import logging
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-from server.agents.interactive.prompts import JUNO_SYSTEM_PROMPT
+from server.agents.interactive.prompts import (
+    JUNO_INTERACTIVE_SYSTEM_PROMPT,
+    wrap_context,
+)
 from server.agents.interactive.sessions import SessionStore
 from server.inference import (
     InferenceChunk,
@@ -104,9 +107,16 @@ class InteractiveLayer:
         return InferenceRequest(messages=messages, task_type="conversational")
 
     def _build_system_prompt(self) -> str:
-        # Reports are loaded fresh per turn so newly written reports take
-        # effect on the next user message without a restart.
+        # Ordering matters for prompt-caching providers (Anthropic): the
+        # static persona is the cache prefix, dynamic context is appended
+        # after. Per-turn reload of reports means new background-layer
+        # output takes effect on the next user message without a restart.
+        #
+        # Phase 4 will replace the load-everything pattern with intent-aware
+        # loading — only the reports relevant to the current message get
+        # injected (calendar.md for time queries, email-digest.md for inbox
+        # queries, etc.), keeping the context budget tight.
         reports = load_reports(self._reports_dir)
-        if not reports:
-            return JUNO_SYSTEM_PROMPT
-        return f"{JUNO_SYSTEM_PROMPT}\n\n{render_reports_block(reports)}"
+        return JUNO_INTERACTIVE_SYSTEM_PROMPT + wrap_context(
+            render_reports_block(reports)
+        )

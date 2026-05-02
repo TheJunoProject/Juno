@@ -122,6 +122,62 @@ Companion app renders response (audio / markdown / web element / combination)
 All agent logic lives on the server. Layers are distinct modules that
 communicate via internal interfaces, not direct calls.
 
+### Design principles (load-bearing — read `docs/agent-architecture.md` for the full design)
+
+1. **Workflow / agent / scheduled-workflow split.** The three layers are not
+   peers — they are different *kinds* of system.
+   - Interactive Layer = **workflow** (router). Predictable, single-pass,
+     latency-critical.
+   - Agentic Layer = **agent** (true loop). The *only* place dynamic
+     model-driven looping is allowed.
+   - Background Layer = **scheduled workflow**. Fixed input → fixed output,
+     no reasoning loops.
+   If you find yourself wanting the Interactive Layer to call a tool, dispatch
+   to the Agentic Layer instead. The boundary is load-bearing.
+2. **Every task dispatched to the Agentic Layer arrives with a
+   machine-checkable success criterion.** No criterion → no dispatch (ask the
+   user one clarifying question instead). This is the single highest-leverage
+   design choice in the loop.
+3. **Plan, act, observe, reflect — re-plan if needed.** Pure plan-then-execute
+   (static plan handed to a dumb executor) is obsolete; plans go stale within
+   one or two tool calls. Plans are small, revisable, and reflected on after
+   each step.
+4. **Two distinct escalation paths, do not confuse them.** Routing escalation
+   = config-driven choice of provider per task class (the *primary* policy).
+   Failure escalation = retry-then-fallback after `escalation_attempts`
+   (the *safety net*). Burning the safety net every other turn means the
+   routing config is wrong.
+5. **Sub-agents for context isolation.** Any branch that would otherwise
+   pollute the parent loop's context (deep research, long inbox scan) gets
+   spawned in a clean child context. The child returns a summary, not the
+   raw exploration.
+6. **Six-section system-prompt structure** (`<identity>`, `<role>`,
+   `<capabilities>`, `<behavior>`, `<response>`, `<uncertainty>`, plus a
+   `<context>` slot for dynamic injection). XML tags, not markdown headers.
+   Each layer has its own focused prompt — never one prompt for all three.
+   Token budgets: Interactive ≤ 2k, Agentic ≤ 3k, Background ≤ 500.
+7. **Just-in-time context loading.** The Interactive Layer pulls only the
+   reports relevant to the current intent (calendar.md for time queries,
+   email-digest.md for inbox queries). It does not concatenate all reports
+   into every prompt. Phase 1 loads everything because there is nothing to
+   load; the load-everything code path is replaced in Phase 4.
+8. **Verification is the highest-leverage thing.** Skills that take action
+   return post-action state, not `{success: true}`. The Background Layer's
+   reports are the verification surface for proactive claims. If you can't
+   verify it, don't claim it.
+9. **Native tool-calling APIs.** Every supported provider (Ollama,
+   Anthropic, OpenAI, Google) exposes one. Use it. Parse-from-text patterns
+   are obsolete except as a fallback for tiny local models that lack
+   tool-call support.
+10. **Hooks vs. prompts.** Anything that *must* happen on every iteration
+    or on a schedule belongs in deterministic code (the scheduler, the
+    router), not in a model prompt. Prompts advise; code enforces.
+
+The full design — agentic loop pseudocode, prompt-caching strategy, skill
+manifest schema with `when_to_use` / `when_not_to_use` / `parallelizable`,
+context-engineering rules — lives in [`docs/agent-architecture.md`](docs/agent-architecture.md).
+Phase 4 implements against that document.
+
 ### Interactive Layer (`server/agents/interactive/`)
 
 Always running. The user-facing layer.
