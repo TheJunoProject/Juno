@@ -480,12 +480,17 @@ Companion app surfaces notification + optional audio alert
 - Hardcode model names, provider URLs, or API keys in source code
 
 ### Language / Runtime
-**TBD — must be decided before Phase 1.** Options:
-- Python + FastAPI (richer ML ecosystem, simpler Ollama/Whisper integration)
-- TypeScript + Fastify/Node (stronger typing, better if sharing code patterns
-  with SwiftUI companion)
-
-Record the decision in this file and do not revisit it.
+**Server: Python 3.11+ with FastAPI.** Decided 2026-05-02 at Phase 1 kickoff.
+Reasoning:
+- Every downstream phase pulls in Python-native tooling: Whisper (STT),
+  Kokoro / Piper (TTS), openWakeWord, ChromaDB / sqlite-vec, optional LoRA
+  fine-tuning. All are Python-first.
+- The companion is SwiftUI / Tauri, so there is no shared-language benefit
+  to TypeScript on the server.
+- FastAPI gives first-class WebSocket streaming. Pydantic v2 closes most of
+  the type-safety gap with TypeScript.
+- The official `ollama` Python client and the broader local-AI ecosystem are
+  Python-first.
 
 macOS companion: SwiftUI
 Linux companion: Tauri
@@ -508,14 +513,14 @@ Complete each phase end-to-end before starting the next.
 
 ---
 
-## Open Questions (resolve before Phase 1)
+## Open Questions
 
-1. **Server runtime** — Python (FastAPI) or TypeScript (Fastify)? Decide,
-   record here, do not revisit.
-2. **Linux companion** — Tauri or Electron?
+1. ~~**Server runtime**~~ — RESOLVED 2026-05-02: Python 3.11+ with FastAPI.
+   See Development Rules → Language / Runtime.
+2. **Linux companion** — Tauri or Electron? (resolve before Linux companion work)
 3. **STT placement** — server-side (keeps companion thin, adds audio streaming
    latency) or companion-side (lower latency, adds dependency)? Plan config
-   to support both.
+   to support both. (resolve in Phase 2)
 
 ---
 
