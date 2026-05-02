@@ -1,206 +1,525 @@
-# Juno — Project Context for Claude Code
+# Juno — Technical Context for Claude Code
 
-## What is Juno?
-
-Juno is a fully local, private, Jarvis-style personal AI assistant. It is built on top of a forked and heavily modified version of OpenClaw, an open source agentic AI runtime. The goal is a system that feels like a genuine personal AI — always on, context-aware, capable of acting on your behalf across your devices, your communications, the web, and your physical environment.
-
----
-
-## Core Principles
-
-- **Fully private** — everything runs locally by default. Cloud models (Claude, Gemini) are an opt-in escape hatch for complex tasks only, never the default
-- **Single user** — this is not a multi-tenant or workspace product. It is built for one person
-- **Always on** — the system runs continuously in the background, proactively building context and ready to respond instantly
-- **Open source** — 100% MIT licensed, no telemetry, no hidden behaviors, fully auditable
-- **Relatively cheap** — designed to run on consumer hardware, not data center infrastructure
+This file is the authoritative reference for all development work on Juno.
+Read it fully before writing any code, creating any files, or making any
+architectural decisions. When in doubt, refer back here.
 
 ---
 
-## Hardware Architecture
+## What is Juno
 
-Juno runs across two physical devices:
+Juno is a fully local, private, open source personal AI assistant built from
+scratch. It is a client/server system: a headless server that runs all AI
+and agent logic, and a companion app that acts as the user interface. The two
+communicate over a local API.
 
-**Backend Box (the brain)**
-A Jetson Orin Nano Super or similar edge AI device acting as the always-on server. Runs small, continuous models — wake word detection, STT, TTS, intent classification, background summarization. Low power, always on.
-
-**Mac (the hands)**
-A MacBook Air M4 or Mac Mini M4. This is where Juno takes actions — controlling apps, reading the screen, sending messages, managing files. The Mac Mini M4's unified memory architecture also makes it capable of running larger local models (7B–14B) on demand via Ollama.
+The design goal is a system that feels like a genuine intelligent presence —
+always on, voice-first, context-aware, capable of taking actions on the user's
+behalf across their devices, communications, and the internet.
 
 ---
 
-## Three-Layer Architecture
+## Repository Structure
 
-### Interactive Layer
-The interface between Juno and the user. Always on, responds quickly, routes tasks.
-
-**Pipeline:**
 ```
-Voice/text input
-      ↓
-Wake word detection (openWakeWord — tiny, always on)
-      ↓
-Speech-to-text (Whisper Small — local)
-      ↓
-Intent classifier (fine-tuned Phi-4 Mini or Qwen 2.5 1.5B — LoRA)
-      ↓
-  Path A: Simple query → conversational model answers directly (Qwen 2.5 7B)
-  Path B: Complex task → dispatches to Agentic Layer
-      ↓
-Response assembled + TTS (Kokoro or Piper — local)
-      ↓
-Spoken/displayed output via macOS companion app
-```
-
-**Responsibilities:**
-- Read and use context reports produced by the Background Layer
-- Route intent to the correct path or agent
-- Deliver final responses to the user
-- Maintain conversational continuity
-
-### Agentic Layer
-Where tasks get executed. May use cloud models for complex reasoning.
-
-**Pipeline:**
-```
-Task received from Interactive Layer
-      ↓
-Task router — which skill(s) are needed?
-      ↓
-Skill execution (web, email, files, system control, etc.)
-      ↓
-Results compiled
-      ↓
-Summarizer — condenses results for Interactive Layer
-      ↓
-Response sent back up
+juno/
+  server/               ← Headless brain — runs on any local machine
+    api/                ← REST + WebSocket API (local network only)
+    agents/             ← Three-layer agent system
+      interactive/      ← Voice/text in, intent routing, response out
+      agentic/          ← Task execution, skill dispatch, tool calls
+      background/       ← Scheduled context building, always running
+    skills/             ← Individual tool modules (one dir per skill)
+      browser/          ← Juno Browser (Playwright + Chromium)
+      email/
+      calendar/
+      communications/
+      system/
+      research/
+      smart-home/
+      reminders/
+      clipboard/
+    inference/          ← Unified model inference abstraction layer
+      providers/        ← One plugin per inference backend
+    memory/             ← Context reports, conversation memory, knowledge store
+    scheduler/          ← Cron-style job runner for background layer
+    config/             ← User configuration schema and loader
+  companion/            ← Client UI
+    macos/              ← SwiftUI app (primary)
+    linux/              ← Tauri app (secondary)
+  docs/                 ← Project documentation
+  hardware/             ← Optional: setup guides, 3D print files
+  LICENSE
+  README.md
+  CLAUDE.md             ← This file
 ```
 
-**Responsibilities:**
-- Execute complex multi-step tasks
-- Manage skill/tool calls with defined input/output schemas
-- Decide when local model suffices vs. escalating to cloud (Claude Sonnet 4 → Opus 4)
-- Report results back to the Interactive Layer cleanly
+---
 
-**Cloud escalation rule:** if the local model fails or produces low-confidence output after 2 attempts, escalate to Claude Sonnet 4. Reserve Opus 4 for genuinely complex reasoning tasks. Always prefer local.
+## Architecture
 
-### Background Layer
-Silent, always-on context engine. Never talks to the user directly.
+### Client / Server Split
 
-**Scheduled jobs:**
+The system is strictly split. The companion app contains zero AI logic.
+
+**Server responsibilities:**
+- Receive requests from the companion app via local API
+- Run the three-layer agent system
+- Interface with AI models through the unified inference layer
+- Execute skills and tool calls
+- Run scheduled background jobs
+- Maintain all memory and context stores
+- Return structured responses to the companion app
+
+**Companion app responsibilities:**
+- Capture voice (send audio to server) or text input
+- Send requests to the server API
+- Receive responses and render them:
+  - Play TTS audio
+  - Render markdown pages
+  - Display web elements (pulled by server, rendered by client)
+- Surface proactive alerts and notifications from the server
+- Provide the on/off switch that starts/stops server processes
+- Act as dashboard for active tasks and context summaries
+
+The companion app is a thin client. It does not make model calls. It does not
+run skills. All intelligence is on the server.
+
+### Local API
+
+Server exposes two interfaces on the local network:
+
+- **REST** — request/response for most interactions (send message, get status,
+  toggle settings)
+- **WebSocket** — streaming for real-time response delivery and server-pushed
+  proactive alerts from the background layer
+
+The API is local only. It is never exposed to the internet.
+
+### Request Flow
+
 ```
-Every 15 min  → Check email and messages for urgent items
-Every 1 hour  → RSS feeds → summarize new items
-Every 6 hours → Full context report generation
-On trigger    → Urgent interrupt pushed to Interactive Layer
+User speaks or types
       ↓
-Context reports written to structured markdown/JSON files
+Companion app captures input (audio file or text string)
       ↓
-Interactive Layer reads these at the start of every conversation
+POST /api/input → server
+      ↓
+Interactive Layer processes (STT if audio, intent classification, routing)
+      ↓
+  Path A — Simple: model answers directly, reads context reports
+  Path B — Complex: Agentic Layer executes task via skills
+      ↓
+Response + data returned to companion app
+      ↓
+Companion app renders response (audio / markdown / web element / combination)
 ```
 
-**Responsibilities:**
-- Produce structured context reports covering: news, email digest, messages, calendar, reminders, active projects
-- Flag urgent items and interrupt the Interactive Layer when needed
-- Run entirely on small local models (Phi-4 Mini, Qwen 2.5 3B)
-- Never call cloud APIs — must be lightweight and always on
+---
+
+## Three-Layer Agent System
+
+All agent logic lives on the server. Layers are distinct modules that
+communicate via internal interfaces, not direct calls.
+
+### Interactive Layer (`server/agents/interactive/`)
+
+Always running. The user-facing layer.
+
+**Input:** voice audio or text string from companion app
+**Output:** structured response object (text + TTS audio + optional markdown
+page or web element reference)
+
+**Processing pipeline:**
+1. If audio input: STT transcription
+2. Intent classification — determines path A or B
+3. Path A (simple): load relevant context reports from memory store, query
+   conversational model, return response
+4. Path B (complex): package task + context, dispatch to Agentic Layer, wait
+   for result, assemble final response
+5. TTS synthesis on response text
+6. Return to companion app
+
+**Key constraints:**
+- Must respond quickly — this is what the user is waiting on
+- Reads context reports at the start of every interaction
+- Maintains conversational continuity across turns within a session
+- Intent classifier is the most critical component — wrong routing is the
+  most common failure mode
+
+### Agentic Layer (`server/agents/agentic/`)
+
+Executes tasks. Receives a task description + context from the Interactive
+Layer, executes it using skills, returns a structured result.
+
+**Processing pipeline:**
+1. Parse task and determine which skill(s) are needed
+2. Execute skills (sequentially or in parallel depending on task)
+3. Compile results
+4. Summarize into clean response for the Interactive Layer
+5. Return structured result
+
+**Key constraints:**
+- Each skill call must use the defined input/output schema — no freeform calls
+- Cloud model escalation: local model gets 2 attempts by default, then
+  escalates to configured fallback provider. Threshold is user-configurable.
+- Must report failures cleanly — never silently fail
+- Skill execution is sandboxed where possible
+
+### Background Layer (`server/agents/background/`)
+
+Silent, always-on context engine. Produces context reports that make the
+Interactive Layer feel context-aware.
+
+**Scheduled jobs (defaults, all user-configurable):**
+- Every 15 min: email and messages check, flag urgent items
+- Every 1 hour: RSS feed fetch and summarize
+- Every 6 hours: full context report generation
+- On event: push urgent interrupt to Interactive Layer via internal event bus
+
+**Output:** structured context report files written to `memory/reports/`:
+- `email-digest.md`
+- `calendar.md`
+- `messages.md`
+- `news.md`
+- `projects.md`
+- `reminders.md`
+
+**Key constraints:**
+- Must use only small, fast local models — cannot be a resource drain
+- Never calls cloud APIs — must be fully local and always running
+- Context report format must be consistent so the Interactive Layer can parse
+  it reliably
 
 ---
 
-## Memory Architecture
+## Inference Layer (`server/inference/`)
 
-Juno maintains three types of memory:
+### Design
 
-**Context Reports** — produced by the Background Layer, short-lived, reflect current state of the world (email, news, calendar). Stored as structured markdown files.
+All model calls in the entire system go through one abstraction: the inference
+layer. No agent, skill, or background job ever calls a model provider directly.
 
-**Conversation Memory** — key facts extracted from every conversation and stored persistently. Example: "User has a dentist appointment Friday." Retrieved via lightweight semantic search at conversation start. Stack: ChromaDB or SQLite-vec, fully local.
+This means:
+- Model providers are plugins — adding or swapping one never requires changing
+  agent code
+- The user can configure any combination of local and cloud models per task
+  type
+- The routing logic (which model handles which task) is fully user-configurable
 
-**Long-term Knowledge Store** — preferences, project history, learned behaviors. Periodically consolidated and summarized to avoid unbounded growth.
+### Provider Plugin Interface
 
----
+Each provider implements a common interface:
 
-## Skill Stack
+```typescript
+interface InferenceProvider {
+  id: string                    // e.g. "ollama", "anthropic", "openai-compat"
+  name: string                  // human readable
+  isAvailable(): Promise<boolean>
+  complete(request: InferenceRequest): Promise<InferenceResponse>
+  stream(request: InferenceRequest): AsyncIterator<InferenceChunk>
+}
+```
 
-Skills are the tools the Agentic Layer can call. Each skill has a defined input/output schema. They are modular — new skills can be added without touching core logic.
+### Built-in Providers (implement in this order)
 
-**Planned skills:**
-- **Juno Browser** — AI-native Chromium browser via Playwright. Two modes: Agent Mode (headless, agent drives) and Display Mode (clean frameless window surfaced in companion app). Agent sees page as text + interactive element map + screenshot simultaneously.
-- **Email Manager** — connects to Mail.app via AppleScript/IMAP. Background polling, urgency classification, draft and send with user confirmation.
-- **Communications** — iMessage/SMS via AppleScript → Messages.app. Phone call initiation via macOS/iPhone handoff.
-- **Calendar & Scheduling** — EventKit via Swift helper or AppleScript → Calendar.app. Full read/write access.
-- **System Controller** — app launch/quit, window management, Do Not Disturb, volume/brightness, screenshot + vision analysis, clipboard read/write, file operations. Via AppleScript + macOS Accessibility API.
-- **Smart Home** — HomeKit API via Swift helper, or Home Assistant if running locally.
-- **Research Tool** — multi-step research agent using Juno Browser. Returns structured briefings, not just links.
-- **Reminders & Proactive Alerts** — time-based and event-based triggers. Juno reaches out to the user, not the other way around.
-- **Clipboard Intelligence** — summarize, rewrite, translate, fix clipboard content and optionally paste back.
+1. **Ollama** — local inference via Ollama API. Primary provider.
+2. **OpenAI-compatible** — covers any provider with an OpenAI-compatible
+   endpoint (LM Studio, vLLM, Together, Groq, etc.)
+3. **Anthropic** — Claude models via Anthropic API
+4. **Google AI** — Gemini models via Google AI API
 
----
+### Routing Classifier
 
-## Local Model Stack
+A small, fast classifier model (runs locally, always on) handles routing
+decisions: given a task type and the user's configuration, which provider
+and model should handle this request?
 
-| Job | Model | Runs on |
-|---|---|---|
-| Wake word | openWakeWord | Jetson / Pi |
-| STT | Whisper Small | Jetson |
-| TTS | Kokoro or Piper | Jetson |
-| Intent classifier | Phi-4 Mini (LoRA fine-tuned) | Jetson |
-| Conversational | Qwen 2.5 7B | Mac (Ollama) |
-| Agentic reasoning | Qwen 2.5 14B | Mac (Ollama) |
-| Background summarizer | Phi-4 Mini | Jetson |
-| Vision / hand tracking | MediaPipe | Jetson |
-| Cloud escape hatch | Claude Sonnet 4 / Opus 4 | API only |
+The classifier lives at `server/inference/router/` and respects:
+- User's configured preferences per task type
+- Provider availability (health checks — if Ollama is unreachable, fall back)
+- Cost policy (user sets "prefer local", "allow cloud", or per-task overrides)
+- Escalation state (has local already failed for this request?)
 
----
+This is a plugin in the inference layer, not a hardcoded rule chain.
 
-## UI
+### User Configuration
 
-The macOS companion app is the primary user-facing interface. It is not a chat app wrapper — it is a purpose-built control surface for Juno.
+All inference routing is configured in `~/.juno/config.yaml`:
 
-**Key UI requirements:**
-- Hard on/off switch — pressing it fully shuts down or starts all Juno processes instantly
-- Displays Juno responses in clean markdown-rendered output
-- Hosts the Display Mode viewport for Juno Browser — frameless, no browser chrome, just the page with a minimal floating Juno control bar
-- Surfaces proactive alerts and notifications from the Background Layer
-- Stays out of the way when not needed
+```yaml
+inference:
+  default_provider: ollama
+  fallback_provider: anthropic
+  escalation_attempts: 2
 
----
+  task_routing:
+    conversational: ollama
+    agentic_reasoning: ollama
+    background_summarization: ollama
+    complex_tasks: anthropic
 
-## Codebase Origin
+  providers:
+    ollama:
+      base_url: http://localhost:11434
+      default_model: qwen2.5:7b
+    anthropic:
+      api_key: ${ANTHROPIC_API_KEY}
+      default_model: claude-sonnet-4-5
+```
 
-Juno is forked from OpenClaw (https://github.com/openclaw/openclaw.git). The following has been stripped from the original:
-
-- All third-party messaging channel integrations (WhatsApp, Telegram, Discord, Slack, Signal, iMessage via OpenClaw, Matrix, Teams, IRC, and all others)
-- Multi-user and workspace management
-- Community skill marketplace / registry
-- Telemetry and analytics
-- OpenClaw/Molty branding throughout
-
-The following has been kept and forms the Juno core runtime:
-
-- Skill execution engine
-- Ollama local model integration
-- Session and memory management
-- macOS node hooks
-- Core agent runtime loop
-
----
-
-## Development Approach
-
-- The primary developer uses Claude Code for implementation
-- Architecture and product decisions are made by the human, implementation is handled by Claude Code
-- Build order: Background Layer first → Interactive Layer → Agentic Layer → macOS companion app → individual skills
-- Start with stubs for skills, expand one at a time
-- Fine-tuning and LoRA are in scope — the intent classifier is the highest priority fine-tune
-- TypeScript is the primary language (inherited from OpenClaw base)
-- All new code should be clean, well-commented, and modular — future contributors should be able to read it easily
+No model names are hardcoded anywhere in agent or skill code.
+All model references come from config.
 
 ---
 
-## What NOT to Do
+## Skill System (`server/skills/`)
 
-- Do not add multi-user features
-- Do not add third-party messaging channel integrations
-- Do not make cloud API calls from the Background Layer
-- Do not call Opus 4 for simple tasks — it is expensive and reserved for hard problems
-- Do not store sensitive data (credentials, personal info) anywhere except the local encrypted keychain
-- Do not add telemetry of any kind
+### Design
+
+Each skill is a self-contained module with:
+- A manifest (`skill.json`) declaring name, description, input schema,
+  output schema
+- An implementation file containing the execution logic
+- Optional per-skill configuration
+
+Skills are discovered at server startup by scanning `server/skills/`.
+The Agentic Layer calls skills by name with a typed input object and receives
+a typed output object. Skills never call models directly — if a skill needs
+a model, it goes through the inference layer.
+
+### Skill Interface
+
+```typescript
+interface Skill {
+  name: string
+  description: string
+  inputSchema: JSONSchema
+  outputSchema: JSONSchema
+  execute(input: SkillInput, context: SkillContext): Promise<SkillOutput>
+}
+```
+
+### Skill Manifest (`skill.json`)
+
+```json
+{
+  "name": "web_search",
+  "description": "Search the web and return structured results",
+  "input": {
+    "query": { "type": "string", "required": true },
+    "max_results": { "type": "number", "required": false }
+  },
+  "output": {
+    "results": { "type": "array" },
+    "summary": { "type": "string" }
+  }
+}
+```
+
+### Skills Build Order
+
+1. `browser` — Juno Browser (see dedicated section)
+2. `web_search` — uses browser in agent mode, returns structured results
+3. `file_read` / `file_write` — read/write files
+4. `clipboard` — read/write/transform Mac clipboard
+5. `system` — Mac system control (apps, windows, DND, screenshot, volume)
+6. `email` — Mail.app via AppleScript or IMAP
+7. `calendar` — Calendar.app via EventKit Swift helper
+8. `messages` — iMessage/SMS via AppleScript
+9. `reminders` — time/event-based alerts with proactive push
+10. `research` — multi-step loop using browser skill
+11. `smart_home` — HomeKit or Home Assistant
+
+---
+
+## Juno Browser (`server/skills/browser/`)
+
+The most complex skill. An AI-native browser built on Playwright + Chromium.
+
+### Agent Mode (headless)
+
+For each page load, three parallel extractions:
+1. **Clean text/markdown** via Readability.js — for reading content
+2. **Interactive element map** — all actionable elements (buttons, inputs,
+   links, selects) with IDs and coordinates, extracted from Playwright's
+   accessibility tree. This is the primary action interface — do not rely
+   on vision for clicking.
+3. **Screenshot** — for visual confirmation when needed, passed to vision
+   model if configured
+
+Agent actions: `click(elementId)`, `type(elementId, text)`,
+`scroll(direction)`, `navigate(url)`, `submit(formId)`, `extract(selector)`
+
+### Display Mode
+
+Server instructs companion app to open a frameless browser window at a URL.
+Companion renders the page with no browser chrome — content only, with a
+minimal floating Juno control bar. User interacts naturally. Agent can still
+see and act on the same page (shared page context).
+
+### Stack
+- Playwright (automation layer)
+- Chromium (engine — best compatibility, best Playwright support)
+- Readability.js (content extraction)
+- Playwright accessibility tree API (element map — preferred over screenshot
+  for action targeting)
+
+---
+
+## Memory System (`server/memory/`)
+
+### Three Stores
+
+**Context Reports** (`memory/reports/`)
+- Produced by Background Layer on schedule
+- Structured markdown, one file per domain
+- Read by Interactive Layer at session start
+- Short-lived — overwritten on each generation cycle
+
+**Conversation Memory** (`memory/conversations/`)
+- Key facts extracted from every conversation and persisted
+- Retrieved via local vector search at session start
+- Periodically consolidated to control growth
+- Implementation: ChromaDB or SQLite-vec — fully local, no external service
+
+**Knowledge Store** (`memory/knowledge/`)
+- Long-term preferences, learned behaviors, user-defined facts
+- Append-only with periodic summarization
+- Structured JSON
+
+### Vector Search
+Fully local. ChromaDB running locally or SQLite with sqlite-vec extension.
+No external vector database services.
+
+---
+
+## Configuration System (`server/config/`)
+
+Single YAML or TOML config file at `~/.juno/config.yaml`.
+Validated against a schema on every server start.
+Invalid config produces a clear error message, never a silent crash.
+
+Key areas:
+- Inference provider setup and per-task routing
+- Background layer job schedules
+- Enabled skills
+- Wake word sensitivity
+- Memory retention policies
+- Companion app connection settings
+
+---
+
+## Companion App
+
+### macOS (`companion/macos/`) — SwiftUI
+Menu bar app with floating window. Primary platform.
+
+Responsibilities (all, no exceptions):
+- Voice capture → audio file → POST to server API
+- Text input → POST to server API
+- Audio playback of TTS responses
+- Markdown rendering
+- Frameless web view for Juno Browser display mode
+- Dashboard: active tasks, context summaries, notification feed
+- Hard on/off: calls server API to start/stop all Juno processes
+- WebSocket connection to server for streaming responses and push alerts
+
+### Linux (`companion/linux/`) — Tauri
+Functionally equivalent. Tauri over Electron for lower resource usage.
+
+### Hard rule
+The companion app must never contain inference calls, skill execution, agent
+logic, or memory management. If logic creeps into the companion app, move it
+to the server.
+
+---
+
+## Scheduler (`server/scheduler/`)
+
+Built-in cron-style scheduler. Must:
+- Support cron expressions for recurring jobs
+- Support one-off delayed jobs (reminders)
+- Support event-driven triggers (background layer urgent interrupts)
+- Persist job state across server restarts
+- Expose an internal event bus for inter-layer communication
+
+The interrupt path for Background Layer → Interactive Layer → Companion App:
+```
+Background layer emits event on internal bus
+      ↓
+Interactive layer receives event, packages alert
+      ↓
+Server pushes to companion app via WebSocket
+      ↓
+Companion app surfaces notification + optional audio alert
+```
+
+---
+
+## Development Rules
+
+### Always
+- Validate all config on load
+- Route all model calls through the inference layer — never call a provider
+  directly from agent or skill code
+- Use typed skill interfaces for all tool calls from the Agentic Layer
+- Keep the companion app as a thin client
+- Handle provider unavailability gracefully — always have a defined fallback
+- Write typed interfaces for all inter-layer communication
+
+### Never
+- Call cloud APIs from the Background Layer
+- Store credentials anywhere except the OS keychain
+- Add telemetry, analytics, or any form of data reporting
+- Add multi-user features
+- Add Windows support
+- Add third-party messaging channel integrations (WhatsApp, Telegram, Discord,
+  Slack, etc.)
+- Expose the local API to the internet
+- Hardcode model names, provider URLs, or API keys in source code
+
+### Language / Runtime
+**TBD — must be decided before Phase 1.** Options:
+- Python + FastAPI (richer ML ecosystem, simpler Ollama/Whisper integration)
+- TypeScript + Fastify/Node (stronger typing, better if sharing code patterns
+  with SwiftUI companion)
+
+Record the decision in this file and do not revisit it.
+
+macOS companion: SwiftUI
+Linux companion: Tauri
+
+### Build Order
+Complete each phase end-to-end before starting the next.
+
+1. Server foundation — API, inference layer (Ollama only), basic agent loop,
+   minimal text-only companion
+2. Voice pipeline — STT, TTS, wake word, audio I/O
+3. Background layer — scheduler, email + RSS jobs, context reports, read by
+   Interactive Layer
+4. Agentic layer + first skills — intent classifier, task router, skill engine,
+   web search + file + clipboard
+5. macOS system integration — system controller, email, calendar, messages
+6. Companion app polish — markdown, display mode, dashboard, notifications,
+   on/off switch
+7. Memory — conversation memory, vector retrieval, knowledge store
+8. Fine-tuning (optional) — intent classifier LoRA, documented process
+
+---
+
+## Open Questions (resolve before Phase 1)
+
+1. **Server runtime** — Python (FastAPI) or TypeScript (Fastify)? Decide,
+   record here, do not revisit.
+2. **Linux companion** — Tauri or Electron?
+3. **STT placement** — server-side (keeps companion thin, adds audio streaming
+   latency) or companion-side (lower latency, adds dependency)? Plan config
+   to support both.
+
+---
+
+## License
+
+License is TBD — either a custom license or GNU GPL v3. Not MIT.
+Do not add any license headers to files until this is decided.
