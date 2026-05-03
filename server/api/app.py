@@ -21,8 +21,10 @@ from server.api.logging import AccessLogMiddleware, configure_logging
 from server.api.routes import admin as admin_routes
 from server.api.routes import chat as chat_routes
 from server.api.routes import health as health_routes
+from server.api.routes import voice as voice_routes
 from server.config import JunoConfig
 from server.inference import InferenceRouter
+from server.voice import VoiceRouter
 
 log = logging.getLogger(__name__)
 
@@ -33,12 +35,14 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         router = InferenceRouter(config.inference)
+        voice_router = VoiceRouter(config.voice)
         interactive = InteractiveLayer(
             router,
             reports_dir=reports_dir or _default_reports_dir(),
         )
         app.state.config = config
         app.state.inference_router = router
+        app.state.voice_router = voice_router
         app.state.interactive_layer = interactive
 
         # Probe Ollama once at startup so the operator sees a clear warning
@@ -55,6 +59,24 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
         else:
             log.info("Ollama is reachable.")
 
+        # Voice readiness: warn if the *selected* provider isn't really
+        # available (e.g. user picked `whisper` without installing the
+        # extra). The stub providers always pass.
+        if not await voice_router.stt.is_available():
+            log.warning(
+                "Selected STT provider '%s' is not available. /api/voice/* "
+                "will fail until you install the [voice] extra or change "
+                "voice.stt.provider.",
+                config.voice.stt.provider,
+            )
+        if not await voice_router.tts.is_available():
+            log.warning(
+                "Selected TTS provider '%s' is not available. /api/voice/* "
+                "will fail until you install the [voice] extra and set "
+                "voice.tts.piper.model_path, or change voice.tts.provider.",
+                config.voice.tts.provider,
+            )
+
         # Don't log host/port here — the CLI may have overridden them, and
         # uvicorn already logs the actual bound address.
         log.info("Juno server v%s ready.", __version__)
@@ -63,6 +85,7 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
             yield
         finally:
             await router.aclose()
+            await voice_router.aclose()
             log.info("Juno server stopped cleanly.")
 
     app = FastAPI(
@@ -76,6 +99,7 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
 
     app.include_router(health_routes.router, prefix="/api")
     app.include_router(chat_routes.router, prefix="/api")
+    app.include_router(voice_routes.router, prefix="/api")
     app.include_router(admin_routes.router, prefix="/api")
 
     @app.exception_handler(StarletteHTTPException)

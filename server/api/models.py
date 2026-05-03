@@ -33,11 +33,27 @@ class ProviderHealth(BaseModel):
     model: str | None = None
 
 
+class VoiceProviderHealth(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    available: bool
+    selected: bool
+    detail: str | None = None
+
+
+class VoiceHealth(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    stt: dict[str, VoiceProviderHealth]
+    tts: dict[str, VoiceProviderHealth]
+
+
 class HealthResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: str
     providers: dict[str, ProviderHealth]
+    voice: VoiceHealth | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -45,3 +61,47 @@ class ErrorResponse(BaseModel):
 
     error: str
     detail: str | None = None
+
+
+# ---- Voice endpoints ----------------------------------------------------
+
+
+class TranscribeResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+    language: str | None = None
+    duration_seconds: float | None = None
+    provider: str
+    model: str | None = None
+
+
+class SynthesizeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1)
+    voice: str | None = None
+
+
+class VoiceTurnResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    transcript: str
+    response: str
+    session_id: str
+    chat_model: str
+    chat_provider: str
+    stt_provider: str
+    tts_provider: str
+    audio_base64: str
+    audio_sample_rate: int
+    audio_duration_seconds: float
+
+
+class WakeWordConfigResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool
+    keyword: str
+    sensitivity: float
+    model: str | None

@@ -43,4 +43,50 @@ inference:
       default_model: qwen2.5:7b
       # How long to wait for a single request, in seconds.
       request_timeout_seconds: 120
+
+voice:
+  stt:
+    # `stub` returns a placeholder string; lets the API contract work
+    # without any model downloads. Switch to `whisper` after running
+    # `pip install -e '.[voice]'` to get real transcription via
+    # faster-whisper.
+    provider: stub
+    # Where transcription happens. Today only `server` is implemented.
+    # `client` is reserved for future companion-side STT.
+    location: server
+    whisper:
+      # faster-whisper model size: tiny / base / small / medium /
+      # large-v3. Smaller is faster and uses less memory.
+      model_size: base
+      # Compute precision. `int8` is the safe CPU default.
+      # On NVIDIA GPUs use `float16` or `int8_float16`.
+      compute_type: int8
+      # Where to cache downloaded model weights. null = library default.
+      download_root: null
+      # null = autodetect language from the audio.
+      default_language: null
+
+  tts:
+    # `stub` returns silent WAV audio of duration proportional to text
+    # length — useful for end-to-end pipeline testing without model
+    # downloads. Switch to `piper` after installing the voice extra
+    # AND downloading a Piper voice model (see VOICES.md in the Piper
+    # repo).
+    provider: stub
+    piper:
+      # Path to a downloaded Piper .onnx voice model. null = stub.
+      model_path: null
+      # Optional speaker id for multi-voice models.
+      speaker_id: null
+
+  wakeword:
+    # Companion-side wake word detection. Server holds the config so the
+    # companion can fetch it via GET /api/voice/wakeword.
+    enabled: true
+    # Spoken trigger phrase.
+    keyword: juno
+    # Detection threshold, 0.0-1.0. Higher = fewer false triggers.
+    sensitivity: 0.5
+    # openWakeWord model identifier. null = companion's default.
+    model: null
 """

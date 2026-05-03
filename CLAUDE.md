@@ -450,6 +450,75 @@ No external vector database services.
 
 ---
 
+## Voice Pipeline (`server/voice/`)
+
+Server-side STT and TTS, fronted by the same provider-router pattern as the
+inference layer (see Inference Layer above). Wake word detection runs on the
+companion (Phase 6); the server only exposes wake word *config* via API.
+
+### Provider interfaces
+
+```python
+class STTProvider:
+    id: str
+    name: str
+    async def is_available(self) -> bool
+    async def transcribe(self, request: STTRequest) -> STTResponse
+
+class TTSProvider:
+    id: str
+    name: str
+    async def is_available(self) -> bool
+    async def synthesize(self, request: TTSRequest) -> TTSResponse
+```
+
+### Built-in providers
+
+- **STT**: `stub` (default — returns a placeholder string; lets the API
+  contract work without model downloads), `whisper` (faster-whisper, optional
+  install via `pip install -e '.[voice]'`).
+- **TTS**: `stub` (default — returns a real silent WAV of duration
+  proportional to text length), `piper` (Piper TTS, optional install via the
+  same extra).
+
+The default config picks `stub` for both. Switching is one line in
+`~/.juno/config.yaml`. Adding new providers (Kokoro, Coqui, ElevenLabs for
+TTS; whisper.cpp, NVIDIA NeMo for STT) means a new file under
+`server/voice/providers/` and one router-registration line — exactly the
+inference-layer pattern.
+
+### Audio formats
+
+- Input to STT: WAV (16-bit PCM mono recommended). Other container formats
+  may be accepted by individual providers but the canonical format the API
+  documents is WAV.
+- Output from TTS: WAV.
+
+The companion records WAV and plays WAV. ffmpeg is not a server dependency.
+
+### Voice API surface
+
+- `POST /api/voice/transcribe` — multipart audio upload, returns `{text, ...}`.
+- `POST /api/voice/synthesize` — JSON body with `text`, returns audio bytes.
+- `POST /api/voice/turn` — full turn: audio in, returns transcript + chat
+  response + synthesized audio + session id. The orchestration is
+  `STT → InteractiveLayer.handle_text → TTS`.
+- `WS /api/voice/turn/stream` — streaming version: client sends a JSON
+  header + audio bytes; server streams text deltas back, then the final TTS
+  audio, then `{"event": "done"}`.
+- `GET /api/voice/wakeword` — companion fetches the wake word configuration
+  (model name, sensitivity, keyword) so it can run detection locally.
+
+### Wake word
+
+Lives on the companion (Phase 6 work). The server holds the config in
+`voice.wakeword` and exposes it through `GET /api/voice/wakeword`. The
+default keyword is "Juno" with the openWakeWord stack. Detection itself
+never runs server-side — it would require streaming audio continuously
+across the network for no benefit.
+
+---
+
 ## Configuration System (`server/config/`)
 
 Single YAML or TOML config file at `~/.juno/config.yaml`.
@@ -574,9 +643,20 @@ Complete each phase end-to-end before starting the next.
 1. ~~**Server runtime**~~ — RESOLVED 2026-05-02: Python 3.11+ with FastAPI.
    See Development Rules → Language / Runtime.
 2. **Linux companion** — Tauri or Electron? (resolve before Linux companion work)
-3. **STT placement** — server-side (keeps companion thin, adds audio streaming
-   latency) or companion-side (lower latency, adds dependency)? Plan config
-   to support both. (resolve in Phase 2)
+3. ~~**STT placement**~~ — RESOLVED 2026-05-03 at Phase 2 kickoff:
+   server-side by default. The companion uploads audio; the server
+   transcribes. Reasons:
+   - Hard rule (Companion App § "Hard rule"): the companion runs no
+     models. STT is a model call. It belongs on the server.
+   - On a single-machine setup latency is negligible.
+   - On a multi-machine setup the server has the GPU.
+   The config schema reserves a `voice.stt.location` field set to
+   `server` today; a future `client` value will let the companion run
+   STT locally and send transcripts instead of audio. Wake word
+   detection is the inverse — it requires constant mic input and
+   therefore lives on the companion regardless. The server only
+   exposes wake word *config* (model name, sensitivity, keyword)
+   for the companion to fetch.
 
 ---
 
