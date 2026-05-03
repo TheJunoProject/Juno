@@ -17,6 +17,18 @@ class ChatRequest(BaseModel):
     session_id: str | None = None
 
 
+class TokenUsageWire(BaseModel):
+    """Token usage as exposed on the API. Mirrors `inference.base.TokenUsage`
+    but lives in the API models so internal type changes don't accidentally
+    leak to clients."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+
+
 class ChatResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -24,6 +36,7 @@ class ChatResponse(BaseModel):
     session_id: str
     model: str
     provider: str
+    usage: TokenUsageWire = Field(default_factory=TokenUsageWire)
 
 
 class ProviderHealth(BaseModel):

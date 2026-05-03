@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisco
 from pydantic import ValidationError
 
 from server.agents.interactive import InteractiveLayer
-from server.api.models import ChatRequest, ChatResponse
+from server.api.models import ChatRequest, ChatResponse, TokenUsageWire
 from server.inference.base import InferenceProviderError
 
 log = logging.getLogger(__name__)
@@ -33,6 +33,11 @@ async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
         session_id=sid,
         model=response.model,
         provider=response.provider,
+        usage=TokenUsageWire(
+            prompt_tokens=response.usage.prompt_tokens,
+            completion_tokens=response.usage.completion_tokens,
+            total_tokens=response.usage.total_tokens,
+        ),
     )
 
 

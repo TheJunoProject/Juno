@@ -124,13 +124,23 @@ async def test_stream_yields_chunks_and_terminates_on_done() -> None:
         await p.aclose()
 
 
+def _live_test_config() -> OllamaProviderConfig:
+    """Build a provider config for the live tests.
+
+    Honours JUNO_TEST_MODEL so the test works against whichever model the
+    user happens to have installed (qwen2.5:7b, gemma4:latest, ...).
+    """
+    model = os.environ.get("JUNO_TEST_MODEL", "qwen2.5:7b")
+    return OllamaProviderConfig(default_model=model)
+
+
 @pytest.mark.skipif(
     os.environ.get("JUNO_TEST_OLLAMA") != "1",
     reason="Set JUNO_TEST_OLLAMA=1 to run live Ollama integration test.",
 )
 async def test_live_ollama_says_hello() -> None:
     """End-to-end: real Ollama, real model, simple greeting."""
-    p = OllamaProvider(OllamaProviderConfig())
+    p = OllamaProvider(_live_test_config())
     try:
         assert await p.is_available(), "Ollama must be running for this test."
         resp = await p.complete(
@@ -141,5 +151,40 @@ async def test_live_ollama_says_hello() -> None:
             )
         )
         assert resp.content.strip() != ""
+        assert resp.provider == "ollama"
+        # Token usage should be populated for a real Ollama response.
+        assert resp.usage.completion_tokens is not None
+        assert resp.usage.completion_tokens > 0
+    finally:
+        await p.aclose()
+
+
+@pytest.mark.skipif(
+    os.environ.get("JUNO_TEST_OLLAMA") != "1",
+    reason="Set JUNO_TEST_OLLAMA=1 to run live Ollama integration test.",
+)
+async def test_live_ollama_streams_real_chunks() -> None:
+    """Streaming path against a live Ollama: verify multiple chunks arrive."""
+    p = OllamaProvider(_live_test_config())
+    try:
+        assert await p.is_available()
+        chunks: list[str] = []
+        saw_done = False
+        async for chunk in p.stream(
+            InferenceRequest(
+                messages=[Message(role="user", content="Count from 1 to 5.")],
+                task_type="conversational",
+                temperature=0.0,
+            )
+        ):
+            if chunk.delta:
+                chunks.append(chunk.delta)
+            if chunk.done:
+                saw_done = True
+        assert saw_done
+        # Real streaming arrives as multiple chunks; if we got the whole
+        # response in one chunk something is buffering.
+        assert len(chunks) > 1, f"expected multiple stream chunks, got {len(chunks)}"
+        assert "".join(chunks).strip() != ""
     finally:
         await p.aclose()

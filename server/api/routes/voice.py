@@ -22,7 +22,6 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from pydantic import ValidationError
 
 from server.agents.interactive import InteractiveLayer
 from server.api.models import (
@@ -284,9 +283,3 @@ async def _safe_send(websocket: WebSocket, payload: dict) -> None:
     except (RuntimeError, WebSocketDisconnect):
         # Socket already closed; nothing to do.
         pass
-
-
-# Validation imported but unused in route signatures — keep the import so
-# the IDE doesn't strip it; FastAPI's request bodies use Pydantic via
-# `payload: SynthesizeRequest`.
-_ = ValidationError
