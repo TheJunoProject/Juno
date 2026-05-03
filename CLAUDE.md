@@ -233,7 +233,8 @@ Interactive Layer feel context-aware.
 - Every 6 hours: full context report generation
 - On event: push urgent interrupt to Interactive Layer via internal event bus
 
-**Output:** structured context report files written to `memory/reports/`:
+**Output:** structured context report files written to
+`<paths.base>/memory/reports/` (default `~/.juno/memory/reports/`):
 - `email-digest.md`
 - `calendar.md`
 - `messages.md`
@@ -246,6 +247,22 @@ Interactive Layer feel context-aware.
 - Never calls cloud APIs — must be fully local and always running
 - Context report format must be consistent so the Interactive Layer can parse
   it reliably
+
+**"Now" context is NOT a background job.** Current date / time / timezone
+is cheap and must be fresh per turn. The Interactive Layer injects it
+directly into the prompt before each call. Caching it through a
+periodic report is the wrong shape — see `docs/agent-architecture.md` §6.
+
+**Implementation notes (Phase 3):**
+- Scheduler: APScheduler (`AsyncIOScheduler`) with a SQLite-backed
+  jobstore at `<paths.base>/scheduler.db`. Persistent across restarts.
+- Event bus: `asyncio.Queue`-based pub/sub. The interrupt path is
+  `Background job → bus.publish("interrupts", ...) → WS /api/events/stream
+  → companion`.
+- Phase 3 ships RSS as the fully-implemented job. email / calendar /
+  messages ship as documented stub jobs that produce a placeholder
+  report describing the schema; real implementations land in Phase 5
+  with macOS system integration.
 
 ---
 

@@ -95,3 +95,20 @@ def wrap_context(context_body: str) -> str:
     if not body:
         return ""
     return f"\n\n<context>\n{body}\n</context>"
+
+
+def now_context_block() -> str:
+    """Render fresh "now" context for the current turn.
+
+    Per `docs/agent-architecture.md` §6, current date / time / timezone is
+    cheap and must be fresh per turn. The Interactive Layer injects this
+    into every prompt rather than relying on a periodic background job.
+    """
+    from datetime import datetime
+    now = datetime.now().astimezone()
+    return (
+        f"## Current time\n\n"
+        f"- date: {now.strftime('%A, %d %B %Y')}\n"
+        f"- time: {now.strftime('%H:%M %Z')}\n"
+        f"- iso: {now.isoformat(timespec='seconds')}\n"
+    )

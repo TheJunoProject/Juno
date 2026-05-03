@@ -89,4 +89,49 @@ voice:
     sensitivity: 0.5
     # openWakeWord model identifier. null = companion's default.
     model: null
+
+paths:
+  # Where Juno keeps user state on disk (reports, scheduler db, voices).
+  # null = ~/.juno. An absolute path overrides.
+  base: null
+
+background:
+  # Master switch for the Background Layer. When false, no jobs run and
+  # /api/background/* returns empty.
+  enabled: true
+  # Persist scheduler state to <paths.base>/scheduler.db across restarts.
+  # Default off in Phase 3: all jobs are cron triggers that get
+  # re-registered on every startup, so persistence is a no-op. Turn on
+  # once you have one-off date jobs (Phase 5+ reminders).
+  persist_jobs: false
+  jobs:
+    rss:
+      enabled: true
+      # APScheduler cron: minute hour day month day_of_week. Hourly default.
+      schedule: "0 * * * *"
+      # Feeds to fetch each run. Add or remove freely; first-party RSS only.
+      feeds:
+        - https://hnrss.org/frontpage
+        - https://feeds.bbci.co.uk/news/rss.xml
+      # Items per feed per run.
+      max_items_per_feed: 5
+      # When true, the inference layer summarises the day's stories into
+      # news.md (uses task_routing.background_summarization). When false,
+      # the report just lists titles + URLs.
+      summarize: true
+      # Per-item character cap fed to the summariser.
+      max_chars_per_item: 1500
+
+    # The email / calendar / messages jobs ship as documented stubs in
+    # Phase 3. They produce a placeholder report with the schema the real
+    # implementations (Phase 5, macOS system integration) will follow.
+    email:
+      enabled: true
+      schedule: "*/15 * * * *"
+    calendar:
+      enabled: true
+      schedule: "*/15 * * * *"
+    messages:
+      enabled: true
+      schedule: "*/15 * * * *"
 """

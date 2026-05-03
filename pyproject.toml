@@ -17,6 +17,13 @@ dependencies = [
     # python-multipart is required for FastAPI multipart upload parsing
     # (used by /api/voice/transcribe and /api/voice/turn).
     "python-multipart>=0.0.9",
+    # Background-layer scheduler (Phase 3). AsyncIOScheduler integrates
+    # cleanly with FastAPI's lifespan. SQLAlchemy is used for the
+    # SQLite-backed jobstore.
+    "apscheduler>=3.10",
+    "sqlalchemy>=2.0",
+    # RSS parsing for the news job.
+    "feedparser>=6.0",
 ]
 
 [project.optional-dependencies]

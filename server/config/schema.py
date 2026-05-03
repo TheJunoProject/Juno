@@ -139,9 +139,84 @@ class VoiceConfig(BaseModel):
     wakeword: WakeWordConfig = Field(default_factory=WakeWordConfig)
 
 
+class PathsConfig(BaseModel):
+    """Where Juno keeps user state on disk.
+
+    Resolved into absolute paths at config load time. The default base
+    is `~/.juno`, with `memory/`, `voices/`, and the scheduler DB all
+    living underneath.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    # Null = ~/.juno. An absolute path overrides.
+    base: str | None = None
+
+
+class RSSJobConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    # Cron expression. APScheduler-style: minute hour day month day_of_week.
+    schedule: str = "0 * * * *"  # hourly on the hour
+    feeds: list[str] = Field(
+        default_factory=lambda: [
+            "https://hnrss.org/frontpage",
+            "https://feeds.bbci.co.uk/news/rss.xml",
+        ]
+    )
+    # How many items to pull from each feed per run.
+    max_items_per_feed: int = Field(default=5, ge=1, le=100)
+    # Whether to run summarisation through the inference layer. Off = the
+    # report just lists titles + URLs (cheap, no model dependency).
+    summarize: bool = True
+    # Per-feed cap on body characters fed to the summariser. Keeps prompts
+    # bounded.
+    max_chars_per_item: int = Field(default=1500, ge=100)
+
+
+class StubJobConfig(BaseModel):
+    """Schema shared by the email / calendar / messages stub jobs.
+
+    They run on schedule and write a clearly-marked placeholder report so
+    the Interactive Layer's report-loading path is exercised end-to-end
+    in Phase 3. Real implementations replace them in Phase 5.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    schedule: str = "*/15 * * * *"  # every 15 minutes
+
+
+class BackgroundJobsConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    rss: RSSJobConfig = Field(default_factory=RSSJobConfig)
+    email: StubJobConfig = Field(default_factory=StubJobConfig)
+    calendar: StubJobConfig = Field(default_factory=StubJobConfig)
+    messages: StubJobConfig = Field(default_factory=StubJobConfig)
+
+
+class BackgroundConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    # Persist scheduler state to <paths.base>/scheduler.db across restarts.
+    # Default off in Phase 3: all of our jobs are cron triggers that get
+    # re-registered with replace_existing=True on startup, so persistence
+    # is a no-op. Phase 5+ one-off date triggers (reminders) will need
+    # this on. When enabled, jobs must be reachable via textual reference
+    # (`module:function`) — APScheduler cannot pickle closures.
+    persist_jobs: bool = False
+    jobs: BackgroundJobsConfig = Field(default_factory=BackgroundJobsConfig)
+
+
 class JunoConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     server: ServerConfig = Field(default_factory=ServerConfig)
+    paths: PathsConfig = Field(default_factory=PathsConfig)
     inference: InferenceConfig = Field(default_factory=InferenceConfig)
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
+    background: BackgroundConfig = Field(default_factory=BackgroundConfig)

@@ -22,6 +22,7 @@ from pathlib import Path
 
 from server.agents.interactive.prompts import (
     JUNO_INTERACTIVE_SYSTEM_PROMPT,
+    now_context_block,
     wrap_context,
 )
 from server.agents.interactive.sessions import SessionStore
@@ -116,7 +117,11 @@ class InteractiveLayer:
         # loading — only the reports relevant to the current message get
         # injected (calendar.md for time queries, email-digest.md for inbox
         # queries, etc.), keeping the context budget tight.
-        reports = load_reports(self._reports_dir)
-        return JUNO_INTERACTIVE_SYSTEM_PROMPT + wrap_context(
-            render_reports_block(reports)
-        )
+        sections: list[str] = [now_context_block()]
+        reports_block = render_reports_block(load_reports(self._reports_dir))
+        if reports_block:
+            sections.append(reports_block)
+        # Join the dynamic sections with a blank line, then wrap once so
+        # the whole thing sits inside a single <context> tag.
+        dynamic = "\n\n".join(sections)
+        return JUNO_INTERACTIVE_SYSTEM_PROMPT + wrap_context(dynamic)

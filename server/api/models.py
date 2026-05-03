@@ -118,3 +118,45 @@ class WakeWordConfigResponse(BaseModel):
     keyword: str
     sensitivity: float
     model: str | None
+
+
+# ---- Background layer ---------------------------------------------------
+
+
+class JobLastRun(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    started_at: str
+    duration_seconds: float
+    success: bool
+    error: str | None = None
+
+
+class JobInfoResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    schedule: str | None
+    next_run: str | None
+    report_filename: str
+    last_run: JobLastRun | None = None
+
+
+class JobsListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    jobs: list[JobInfoResponse]
+
+
+class ReportInfo(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    size_bytes: int
+    modified_at: str
+
+
+class ReportsListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reports: list[ReportInfo]

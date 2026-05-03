@@ -4,14 +4,20 @@ from server.config.loader import (
     load_config,
     user_config_path,
 )
+from server.config.paths import JunoPaths
 from server.config.schema import (
+    BackgroundConfig,
+    BackgroundJobsConfig,
     InferenceConfig,
     JunoConfig,
     OllamaProviderConfig,
+    PathsConfig,
     PiperConfig,
     ProvidersConfig,
+    RSSJobConfig,
     ServerConfig,
     STTConfig,
+    StubJobConfig,
     TaskRoutingConfig,
     TTSConfig,
     VoiceConfig,
@@ -20,14 +26,20 @@ from server.config.schema import (
 )
 
 __all__ = [
+    "BackgroundConfig",
+    "BackgroundJobsConfig",
     "ConfigError",
     "InferenceConfig",
     "JunoConfig",
+    "JunoPaths",
     "OllamaProviderConfig",
+    "PathsConfig",
     "PiperConfig",
     "ProvidersConfig",
+    "RSSJobConfig",
     "STTConfig",
     "ServerConfig",
+    "StubJobConfig",
     "TTSConfig",
     "TaskRoutingConfig",
     "VoiceConfig",
