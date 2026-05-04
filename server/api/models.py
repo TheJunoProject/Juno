@@ -160,3 +160,24 @@ class ReportsListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reports: list[ReportInfo]
+
+
+# ---- Skills ------------------------------------------------------------
+
+
+class SkillManifestWire(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    description: str
+    when_to_use: str
+    when_not_to_use: str
+    parallelizable: bool
+    input: dict
+    output: dict
+
+
+class SkillsListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    skills: list[SkillManifestWire]

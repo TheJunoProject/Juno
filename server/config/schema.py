@@ -45,6 +45,7 @@ class TaskRoutingConfig(BaseModel):
 
     conversational: ProviderId = "ollama"
     agentic_reasoning: ProviderId = "ollama"
+    intent_classification: ProviderId = "ollama"
     background_summarization: ProviderId = "ollama"
     complex_tasks: ProviderId = "ollama"
 

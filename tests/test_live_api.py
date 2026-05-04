@@ -75,12 +75,19 @@ def test_live_chat_streaming_yields_real_chunks(tmp_path: Path) -> None:
             ws.send_json({"message": "Count from 1 to 5.", "session_id": None})
 
             chunks: list[str] = []
+            saw_intent = False
+            saw_agentic_path = False
             saw_done = False
             session_id = None
             for _ in range(500):  # generous frame ceiling
                 frame = ws.receive_json()
                 if "error" in frame:
                     raise AssertionError(f"server error: {frame}")
+                ev = frame.get("event")
+                if ev == "intent":
+                    saw_intent = True
+                    saw_agentic_path = frame.get("path") == "agentic"
+                    continue
                 if frame.get("done"):
                     saw_done = True
                     session_id = frame["session_id"]
@@ -88,12 +95,17 @@ def test_live_chat_streaming_yields_real_chunks(tmp_path: Path) -> None:
                 if frame.get("delta"):
                     chunks.append(frame["delta"])
 
+            assert saw_intent, "Phase 4 wire format must lead with an intent frame"
             assert saw_done
             assert session_id
-            # Real streaming arrives as multiple chunks. If we got one chunk
-            # something is buffering server-side.
-            assert len(chunks) > 1, f"expected >1 chunk, got {len(chunks)}"
             assert "".join(chunks).strip() != ""
+            # Direct path produces token-level streaming (multiple chunks).
+            # Agentic path emits a single consolidated final-text delta.
+            # Either is valid; just don't accept zero deltas.
+            if not saw_agentic_path:
+                assert len(chunks) > 1, (
+                    f"direct path should stream, got {len(chunks)} chunk(s)"
+                )
 
 
 def test_live_session_continuity(tmp_path: Path) -> None:
@@ -140,6 +152,66 @@ def test_live_voice_turn_full_pipeline(tmp_path: Path) -> None:
         # transcript ("[stub STT] received 0.40s of audio ...").
         assert body["response"].strip() != ""
         assert body["audio_duration_seconds"] > 0
+
+
+def test_live_agentic_file_write_flow(tmp_path: Path) -> None:
+    """End-to-end Phase 4: classifier routes to agentic, model calls
+    file_write, the file actually appears on disk, and the agent
+    produces a final answer.
+
+    Pinned to file_write because it has a deterministic verifiable side
+    effect (file size, file contents) — web_search results would be
+    flaky to assert against."""
+    cfg = _live_config(tmp_path / "reports")
+    cfg.paths.base = str(tmp_path / "juno")
+    app = create_app(cfg, reports_dir=tmp_path / "reports")
+    with TestClient(app) as client:
+        with client.websocket_connect("/api/chat/stream") as ws:
+            ws.send_json(
+                {
+                    "message": (
+                        "Write a file called phase4-test.md with the exact "
+                        "single line 'pass' (lowercase, no quotes). Then "
+                        "confirm in one short sentence what you did."
+                    ),
+                    "session_id": None,
+                }
+            )
+            saw_intent = False
+            saw_tool_call = False
+            saw_tool_result_ok = False
+            saw_final = False
+            saw_done = False
+            for _ in range(2000):
+                frame = ws.receive_json()
+                ev = frame.get("event")
+                # Top-level errors have no `event` key; tool_result frames
+                # carry an `error` field (which is null on success).
+                if ev is None and "error" in frame and "delta" not in frame and not frame.get("done"):
+                    raise AssertionError(f"server error: {frame}")
+                if ev == "intent":
+                    saw_intent = True
+                elif ev == "tool_call" and frame.get("name") == "file_write":
+                    saw_tool_call = True
+                elif ev == "tool_result" and frame.get("name") == "file_write":
+                    saw_tool_result_ok = bool(frame.get("ok"))
+                elif "delta" in frame:
+                    saw_final = True
+                elif frame.get("done"):
+                    saw_done = True
+                    break
+
+            assert saw_intent
+            assert saw_tool_call, "model never called file_write"
+            assert saw_tool_result_ok, "file_write tool reported failure"
+            assert saw_final, "no final text emitted"
+            assert saw_done
+
+        # Verify the side effect.
+        path = tmp_path / "juno" / "skill-data" / "phase4-test.md"
+        assert path.is_file(), f"file_write did not produce {path}"
+        # Trim model-side trailing whitespace/newlines that don't change semantics.
+        assert path.read_text(encoding="utf-8").strip() == "pass"
 
 
 def test_live_voice_turn_stream_full_pipeline(tmp_path: Path) -> None:

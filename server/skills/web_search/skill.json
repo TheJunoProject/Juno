@@ -1,0 +1,34 @@
+{
+  "name": "web_search",
+  "description": "Search the public web and return ranked results with title, URL, and snippet.",
+  "when_to_use": "User asks for a fact you don't reliably know, or for information likely to have changed since your training data (current events, prices, releases, weather).",
+  "when_not_to_use": "User asks an opinion, asks about themselves or their files, or the answer is plainly in a context report you've been given.",
+  "parallelizable": true,
+  "input": {
+    "query": {
+      "type": "string",
+      "description": "The search query, written as a normal user would type it.",
+      "required": true
+    },
+    "max_results": {
+      "type": "integer",
+      "description": "How many results to return (1-10).",
+      "required": false
+    }
+  },
+  "output": {
+    "results": {"type": "array", "description": "List of {title, url, snippet} objects."},
+    "count": {"type": "integer", "description": "Number of results returned."}
+  },
+  "examples": [
+    {
+      "input": {"query": "official ollama release notes"},
+      "output": {
+        "results": [
+          {"title": "Releases · ollama/ollama", "url": "https://github.com/ollama/ollama/releases", "snippet": "..."}
+        ],
+        "count": 1
+      }
+    }
+  ]
+}

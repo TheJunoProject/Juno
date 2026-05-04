@@ -329,6 +329,7 @@ inference:
   task_routing:
     conversational: ollama
     agentic_reasoning: ollama
+    intent_classification: ollama
     background_summarization: ollama
     complex_tasks: anthropic
 
@@ -375,20 +376,39 @@ interface Skill {
 
 ### Skill Manifest (`skill.json`)
 
+Per `docs/agent-architecture.md` §7. The `description`,
+`when_to_use`, and `when_not_to_use` strings are what the model
+actually reads to decide whether to call — they earn their tokens.
+
 ```json
 {
   "name": "web_search",
-  "description": "Search the web and return structured results",
+  "description": "Search the web and return structured results.",
+  "when_to_use": "User asks for a fact you don't reliably know, or for current information.",
+  "when_not_to_use": "User asks an opinion, asks about themselves, or the answer is in a context report.",
+  "parallelizable": true,
   "input": {
-    "query": { "type": "string", "required": true },
-    "max_results": { "type": "number", "required": false }
+    "query":       { "type": "string", "required": true },
+    "max_results": { "type": "number", "required": false, "default": 5 }
   },
   "output": {
     "results": { "type": "array" },
     "summary": { "type": "string" }
-  }
+  },
+  "examples": [
+    {
+      "input":  { "query": "current Bitcoin price USD" },
+      "output": { "summary": "About $68,400 (CoinGecko, 2026-05-02).", "results": ["..."] }
+    }
+  ]
 }
 ```
+
+Phase 4 ships this schema as a Pydantic model in
+`server/skills/manifest.py`. The Agentic Layer hands the manifests
+to the inference layer's native tool-calling path; only `description`,
+`when_to_use`, and the input schema are sent to the model — examples
+are reserved for prompt-engineering tweaks.
 
 ### Skills Build Order
 

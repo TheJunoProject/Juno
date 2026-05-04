@@ -5,6 +5,8 @@ from server.inference.base import (
     InferenceResponse,
     Message,
     TaskType,
+    Tool,
+    ToolCall,
 )
 from server.inference.router import InferenceRouter
 
@@ -16,4 +18,6 @@ __all__ = [
     "InferenceRouter",
     "Message",
     "TaskType",
+    "Tool",
+    "ToolCall",
 ]

@@ -102,14 +102,20 @@ def test_chat_websocket_streams_chunks(tmp_path: Path) -> None:
         app.state.inference_router._providers["ollama"] = StubProvider()
         with client.websocket_connect("/api/chat/stream") as ws:
             ws.send_json({"message": "hello", "session_id": None})
-            collected = []
+            collected: list[str] = []
+            saw_intent = False
             done_seen = False
-            for _ in range(10):
+            for _ in range(20):
                 frame = ws.receive_json()
+                if frame.get("event") == "intent":
+                    saw_intent = True
+                    continue
                 if frame.get("done"):
                     done_seen = True
                     break
-                collected.append(frame["delta"])
+                if "delta" in frame:
+                    collected.append(frame["delta"])
+            assert saw_intent, "Phase 4 wire format must lead with an intent frame"
             assert done_seen
             assert "".join(collected) == "echo: hello"
 

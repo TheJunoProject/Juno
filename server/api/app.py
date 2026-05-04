@@ -25,18 +25,22 @@ from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from server import __version__
+from server.agents.agentic import AgenticLayer
 from server.agents.background import BackgroundRuntime
 from server.agents.interactive import InteractiveLayer
+from server.agents.interactive.classifier import IntentClassifier
 from server.api.logging import AccessLogMiddleware, configure_logging
 from server.api.routes import admin as admin_routes
 from server.api.routes import background as background_routes
 from server.api.routes import chat as chat_routes
 from server.api.routes import health as health_routes
+from server.api.routes import skills as skills_routes
 from server.api.routes import voice as voice_routes
 from server.config import JunoConfig
 from server.config.paths import resolve_paths
 from server.inference import InferenceRouter
 from server.scheduler import EventBus, JunoScheduler
+from server.skills import SkillRegistry
 from server.voice import VoiceRouter
 
 log = logging.getLogger(__name__)
@@ -66,9 +70,21 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
             if config.background.persist_jobs
             else None,
         )
+        skill_registry = SkillRegistry()
+        skill_registry.discover()
+        agentic = AgenticLayer(
+            config=config,
+            paths=paths,
+            inference=router,
+            skills=skill_registry,
+            bus=bus,
+        )
+        classifier = IntentClassifier(router=router, skills=skill_registry)
         interactive = InteractiveLayer(
             router,
             reports_dir=effective_reports_dir,
+            agentic=agentic,
+            classifier=classifier,
         )
         background_runtime: BackgroundRuntime | None = None
         if config.background.enabled:
@@ -87,6 +103,9 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
         app.state.voice_router = voice_router
         app.state.event_bus = bus
         app.state.scheduler = scheduler
+        app.state.skill_registry = skill_registry
+        app.state.agentic_layer = agentic
+        app.state.intent_classifier = classifier
         app.state.interactive_layer = interactive
         app.state.background_runtime = background_runtime
 
@@ -114,6 +133,21 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
                 "will fail until you install the [voice] extra and set "
                 "voice.tts.piper.model_path, or change voice.tts.provider.",
                 config.voice.tts.provider,
+            )
+
+        # Skill registry: a useful info line so operators can see what
+        # the model has access to without hitting /api/skills.
+        skill_names = skill_registry.names()
+        if skill_names:
+            log.info(
+                "Agentic Layer wired with %d skill(s): %s",
+                len(skill_names),
+                ", ".join(skill_names),
+            )
+        else:
+            log.warning(
+                "No skills registered — agentic dispatch will return "
+                "with no tools. Check server/skills/ for missing manifests."
             )
 
         # ---- start scheduler last -----------------------------------
@@ -145,6 +179,7 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
     app.include_router(voice_routes.router, prefix="/api")
     app.include_router(background_routes.router, prefix="/api")
     app.include_router(background_routes.events_router, prefix="/api")
+    app.include_router(skills_routes.router, prefix="/api")
     app.include_router(admin_routes.router, prefix="/api")
 
     @app.exception_handler(StarletteHTTPException)

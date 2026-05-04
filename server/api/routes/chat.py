@@ -1,4 +1,14 @@
-"""Chat endpoints — REST + WebSocket streaming."""
+"""Chat endpoints — REST + WebSocket streaming.
+
+Phase 4 introduces intent-aware routing inside the InteractiveLayer.
+The streaming endpoint emits a richer wire format that surfaces the
+intent decision and (for agentic tasks) the per-step tool calls and
+results, so a companion can render a live trace.
+
+Backwards compatibility: the {"delta": ..., "done": true} frames the
+Phase 1 client expects are still sent, so an old client keeps working
+— it just ignores the new {"event": ...} frames.
+"""
 
 from __future__ import annotations
 
@@ -43,14 +53,30 @@ async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
 
 @router.websocket("/chat/stream")
 async def chat_stream(websocket: WebSocket) -> None:
-    """Streaming chat over WebSocket.
+    """Streaming chat over WebSocket — Phase 4 intent-aware surface.
 
-    Wire format:
-      Client -> {"message": str, "session_id": str | null}
-      Server -> {"delta": str, "session_id": str, "model": str, "provider": str}
-                ... one frame per chunk ...
-                {"done": true, "session_id": str}
-      Server -> {"error": str}  on any failure
+    Wire format (server frames):
+
+        {"event": "intent",  "path": "direct" | "agentic",
+         "skills": [...], "reports": [...], "rationale": str,
+         "session_id": str}
+
+        {"event": "plan",        "text": str, "session_id": str}     # path=agentic only
+        {"event": "tool_call",   "id": str, "name": str, "arguments": {...}, "session_id": str}
+        {"event": "tool_result", "id": str, "name": str, "ok": bool,
+         "summary": str, "error": str | null, "session_id": str}
+
+        {"delta": str, "session_id": str, "model": "interactive", "provider": "interactive"}
+        ... one frame per chunk for the direct path,
+            or one consolidated frame for the agentic final answer ...
+
+        {"done": true, "session_id": str}
+
+        {"error": str, "detail": str | null}     # on any failure
+
+    Backwards compatibility: the `delta` and `done` frames have the same
+    shape Phase 1 used. Phase 1 clients that ignore unknown keys keep
+    working.
     """
     await websocket.accept()
     interactive: InteractiveLayer = websocket.app.state.interactive_layer
@@ -68,33 +94,56 @@ async def chat_stream(websocket: WebSocket) -> None:
         return
 
     try:
-        async for chunk, sid in interactive.stream_text(
+        async for ev in interactive.stream_turn(
             payload.message, session_id=payload.session_id
         ):
-            if chunk.delta:
+            sid = ev.session_id
+            if ev.kind == "intent":
+                await websocket.send_text(
+                    json.dumps({"event": "intent", **(ev.payload or {}), "session_id": sid})
+                )
+            elif ev.kind == "plan":
+                await websocket.send_text(
+                    json.dumps({"event": "plan", **(ev.payload or {}), "session_id": sid})
+                )
+            elif ev.kind == "tool_call":
+                await websocket.send_text(
+                    json.dumps({"event": "tool_call", **(ev.payload or {}), "session_id": sid})
+                )
+            elif ev.kind == "tool_result":
+                await websocket.send_text(
+                    json.dumps({"event": "tool_result", **(ev.payload or {}), "session_id": sid})
+                )
+            elif ev.kind == "delta":
                 await websocket.send_text(
                     json.dumps(
                         {
-                            "delta": chunk.delta,
+                            "delta": ev.text,
                             "session_id": sid,
-                            "model": chunk.model,
-                            "provider": chunk.provider,
+                            "model": "interactive",
+                            "provider": "interactive",
                         }
                     )
                 )
-            if chunk.done:
+            elif ev.kind == "done":
                 await websocket.send_text(
                     json.dumps({"done": True, "session_id": sid})
                 )
+            elif ev.kind == "error":
+                await websocket.send_json(
+                    {"error": "turn_failed", "detail": (ev.payload or {}).get("detail")}
+                )
+                break
     except InferenceProviderError as e:
         log.warning("Inference failure during stream: %s", e)
         try:
             await websocket.send_json({"error": "inference_failed", "detail": str(e)})
         except RuntimeError:
-            # Socket already closed; nothing to do.
             pass
     except WebSocketDisconnect:
-        # Client hung up mid-stream. Not exceptional.
         return
 
-    await websocket.close()
+    try:
+        await websocket.close()
+    except RuntimeError:
+        pass

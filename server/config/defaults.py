@@ -32,6 +32,9 @@ inference:
   task_routing:
     conversational: ollama
     agentic_reasoning: ollama
+    # Intent classification per turn (Path A vs Path B routing). Point at
+    # a smaller / faster model than `conversational` if you have one.
+    intent_classification: ollama
     background_summarization: ollama
     complex_tasks: ollama
 

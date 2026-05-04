@@ -1,0 +1,31 @@
+{
+  "name": "file_read",
+  "description": "Read a UTF-8 text file from the user's local machine and return its contents. Reads are sandboxed to ~/.juno/skill-data/ unless the user has explicitly allowed more.",
+  "when_to_use": "User asks you to look at, summarise, or quote from a specific file they've referenced.",
+  "when_not_to_use": "User hasn't named a file. Don't speculatively scan disk. For bulk file search use the (future) `file_search` skill, not repeated reads.",
+  "parallelizable": true,
+  "input": {
+    "path": {
+      "type": "string",
+      "description": "Absolute path or path relative to the sandbox (~/.juno/skill-data).",
+      "required": true
+    },
+    "max_bytes": {
+      "type": "integer",
+      "description": "Cap on bytes returned (default 200_000). Larger files come back truncated with a note.",
+      "required": false
+    }
+  },
+  "output": {
+    "path":      {"type": "string"},
+    "content":   {"type": "string"},
+    "truncated": {"type": "boolean"},
+    "size_bytes":{"type": "integer"}
+  },
+  "examples": [
+    {
+      "input": {"path": "notes.md"},
+      "output": {"path": "/Users/.../notes.md", "content": "...", "truncated": false, "size_bytes": 412}
+    }
+  ]
+}

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -21,18 +21,63 @@ from pydantic import BaseModel, ConfigDict, Field
 TaskType = Literal[
     "conversational",
     "agentic_reasoning",
+    "intent_classification",
     "background_summarization",
     "complex_tasks",
 ]
 
-Role = Literal["system", "user", "assistant"]
+# Adds "tool" to the conversational role set so we can echo tool results
+# back into the model's context as proper tool messages (per Ollama /
+# OpenAI tool-call convention).
+Role = Literal["system", "user", "assistant", "tool"]
+
+
+class ToolCall(BaseModel):
+    """One model-emitted tool call in a single assistant turn."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # Provider-emitted call id when present (some backends use it to
+    # correlate result messages back to the originating call). Synthesised
+    # from the call index when the provider doesn't send one.
+    id: str
+    name: str
+    # Parsed arguments object. Providers that emit tool calls as JSON
+    # strings are parsed into a dict by the provider adapter before this
+    # model is constructed.
+    arguments: dict[str, Any] = Field(default_factory=dict)
 
 
 class Message(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     role: Role
-    content: str
+    # Text content. Empty string is valid for assistant turns whose only
+    # output is a tool call.
+    content: str = ""
+    # Populated on assistant turns when the model called tools.
+    tool_calls: list[ToolCall] = Field(default_factory=list)
+    # Set on `role="tool"` messages: the call id this result corresponds
+    # to, and the tool name (echoed for clarity / model-side disambiguation).
+    tool_call_id: str | None = None
+    name: str | None = None
+
+
+class Tool(BaseModel):
+    """Tool definition passed to the model.
+
+    Mirrors the OpenAI / Ollama function-tool shape. The Agentic Layer
+    derives one of these from each registered Skill's manifest.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    description: str
+    # JSON Schema for the input. Providers send this verbatim to the
+    # model, so it must conform to JSON Schema draft 7 (the de facto
+    # standard tool-calling backends accept).
+    parameters: dict[str, Any]
 
 
 class InferenceRequest(BaseModel):
@@ -44,6 +89,14 @@ class InferenceRequest(BaseModel):
     model: str | None = None
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int | None = Field(default=None, gt=0)
+    # Tools the model may call. Empty = no tool calling for this request.
+    # Providers that don't support tool calls ignore this field; the
+    # router's task_routing should keep tool-using tasks pointed at
+    # tool-capable models.
+    tools: list[Tool] = Field(default_factory=list)
+    # When True the model is told to produce a JSON object as its only
+    # output. Used by the intent classifier and other structured calls.
+    response_format_json: bool = False
 
 
 class TokenUsage(BaseModel):
@@ -61,13 +114,18 @@ class InferenceResponse(BaseModel):
     model: str
     provider: str
     usage: TokenUsage = Field(default_factory=TokenUsage)
+    # Populated when the model emitted tool calls instead of (or in
+    # addition to) free text. Empty list when no tools were called.
+    tool_calls: list[ToolCall] = Field(default_factory=list)
 
 
 class InferenceChunk(BaseModel):
     """One incremental piece of a streaming response.
 
     `delta` is the new token(s) since the previous chunk. `done=True` marks
-    the final chunk and may carry the final `usage` numbers.
+    the final chunk and may carry the final `usage` numbers and any
+    accumulated tool calls (Ollama emits tool_calls only on the final
+    `done=true` frame, not progressively).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -77,6 +135,7 @@ class InferenceChunk(BaseModel):
     provider: str
     done: bool = False
     usage: TokenUsage | None = None
+    tool_calls: list[ToolCall] = Field(default_factory=list)
 
 
 class InferenceProviderError(Exception):

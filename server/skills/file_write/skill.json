@@ -1,0 +1,35 @@
+{
+  "name": "file_write",
+  "description": "Write a UTF-8 text file. Sandboxed to ~/.juno/skill-data/. By default refuses to overwrite an existing file unless `overwrite: true` is set.",
+  "when_to_use": "User asks you to save, draft, write down, or note something — and you have the content ready.",
+  "when_not_to_use": "Before you have the actual content. Plan the content first; only call this when you'd be writing the final bytes.",
+  "parallelizable": false,
+  "input": {
+    "path": {
+      "type": "string",
+      "description": "Absolute path or path relative to the sandbox.",
+      "required": true
+    },
+    "content": {
+      "type": "string",
+      "description": "UTF-8 text to write.",
+      "required": true
+    },
+    "overwrite": {
+      "type": "boolean",
+      "description": "If false (default), refuses when the file already exists.",
+      "required": false
+    }
+  },
+  "output": {
+    "path":       {"type": "string"},
+    "size_bytes": {"type": "integer"},
+    "created":    {"type": "boolean"}
+  },
+  "examples": [
+    {
+      "input": {"path": "todo.md", "content": "- pick up groceries\n- call mum\n"},
+      "output": {"path": "/Users/.../todo.md", "size_bytes": 32, "created": true}
+    }
+  ]
+}

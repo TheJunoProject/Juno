@@ -1,0 +1,29 @@
+{
+  "name": "clipboard",
+  "description": "Read or write the macOS system clipboard. Mode 'read' returns the current clipboard text; mode 'write' replaces it with the supplied text.",
+  "when_to_use": "User asks you to copy something to their clipboard, paste from clipboard, or work with what's on their clipboard right now.",
+  "when_not_to_use": "User just wants you to remember a value within the conversation. Use the conversation, not the clipboard.",
+  "parallelizable": false,
+  "input": {
+    "mode": {
+      "type": "string",
+      "enum": ["read", "write"],
+      "description": "'read' returns the current text; 'write' replaces it.",
+      "required": true
+    },
+    "text": {
+      "type": "string",
+      "description": "Required for mode='write'. Ignored for mode='read'.",
+      "required": false
+    }
+  },
+  "output": {
+    "mode":   {"type": "string"},
+    "text":   {"type": "string", "description": "Read mode: clipboard contents. Write mode: what was written."},
+    "bytes":  {"type": "integer"}
+  },
+  "examples": [
+    {"input": {"mode": "read"}, "output": {"mode": "read", "text": "...", "bytes": 412}},
+    {"input": {"mode": "write", "text": "hello"}, "output": {"mode": "write", "text": "hello", "bytes": 5}}
+  ]
+}
