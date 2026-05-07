@@ -1,10 +1,9 @@
 <div align="center">
 
-<img src="juno-logo.png" alt="Juno" width="120" />
+<img src="branding/juno-logo.png" alt="Juno" width="120" />
 
 # Juno
 
-**Your own Jarvis. Runs locally. Stays private.**
 
 A fully local, open source personal AI assistant that is always on, voice-first,
 and capable of taking real actions on your behalf.
@@ -104,7 +103,7 @@ makes Juno feel like it already knows what is going on.
 ### Requirements
 
 - macOS 13+ (Linux support in progress)
-- A machine to run the server (your Mac, a mini PC, a Jetson, etc.)
+- A machine to run the server (your Mac, a mini PC, a VPS, etc.)
 - [Ollama](https://ollama.ai) installed for local model inference
 
 ### Install
@@ -241,7 +240,7 @@ time, and your support directly funds continued work.
 If Juno is useful to you or you believe in what it is trying to do, consider
 sponsoring:
 
-**[Sponsor on GitHub →](https://github.com/sponsors/Juno-Personal-AI)**
+**To sponser please email sponserjuno@alexbiche.me**
 
 Every contribution helps — whether it is a one-time amount or a monthly
 subscription. Thank you.
