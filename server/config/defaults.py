@@ -137,4 +137,57 @@ background:
     messages:
       enabled: true
       schedule: "*/15 * * * *"
+
+integrations:
+  # Per-domain backend selection. Each domain has a base interface and
+  # one or more concrete implementations under server/integrations/.
+  # Switching is one line; skill code stays unchanged.
+  email:
+    # `apple_mail`: drives Mail.app via AppleScript (macOS only;
+    #   uses accounts the user already configured in Mail).
+    # `imap`: works with any provider speaking IMAP/SMTP — Gmail (app
+    #   password), iCloud Mail, Outlook, Fastmail, Posteo, ProtonMail
+    #   Bridge, Tutanota Bridge, self-hosted Dovecot, etc.
+    backend: apple_mail
+    imap:
+      host: ""
+      port: 993
+      username: ""
+      # Name of the env var that holds the password. Phase 6 will add
+      # macOS Keychain support; same field will accept it then.
+      password_env: JUNO_IMAP_PASSWORD
+      use_ssl: true
+      mailbox: INBOX
+    smtp:
+      host: ""
+      port: 587
+      username: ""
+      password_env: JUNO_SMTP_PASSWORD
+      # `use_ssl: true` is implicit-TLS (port 465). For port 587 leave
+      # use_ssl false and use_starttls true.
+      use_ssl: false
+      use_starttls: true
+      # If empty, defaults to `username` for the From: header.
+      from_address: ""
+
+  calendar:
+    # `apple_calendar`: drives Calendar.app via AppleScript.
+    # `caldav`: works with iCloud, Google Calendar (via the CalDAV
+    #   bridge), Fastmail, Posteo, Nextcloud, Radicale, Baikal, etc.
+    #   Requires `pip install -e '.[calendar]'`.
+    backend: apple_calendar
+    caldav:
+      url: ""
+      username: ""
+      password_env: JUNO_CALDAV_PASSWORD
+
+  messages:
+    # Only `apple_messages` is supported today. Per CLAUDE.md hard
+    # rules we never integrate WhatsApp / Telegram / Discord / Slack.
+    backend: apple_messages
+
+  system:
+    # Only `macos` is supported today. Linux backend (xdotool / wmctrl
+    # / pactl / grim+slurp) lands with the Linux companion (Phase 6+).
+    backend: macos
 """

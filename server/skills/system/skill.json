@@ -1,0 +1,32 @@
+{
+  "name": "system",
+  "description": "Control the user's macOS system: list / launch / quit applications, set output volume, take a screenshot.",
+  "when_to_use": "User asks you to open or close an app, change the system volume, list what's running, or capture the screen.",
+  "when_not_to_use": "User wants you to read or modify a file (use file_read / file_write). User wants to send a message, email, or calendar event (use those skills directly).",
+  "parallelizable": false,
+  "input": {
+    "mode": {
+      "type": "string",
+      "enum": ["apps_list", "app_launch", "app_quit", "volume_set", "screenshot"],
+      "required": true
+    },
+    "app": {
+      "type": "string",
+      "description": "Application name (e.g. 'Safari'). Required for app_launch and app_quit."
+    },
+    "volume": {
+      "type": "integer",
+      "description": "Output volume level 0-100. Required for volume_set."
+    }
+  },
+  "output": {
+    "mode":   {"type": "string"},
+    "result": {"type": "string"}
+  },
+  "examples": [
+    {"input": {"mode": "apps_list"}, "output": {"mode": "apps_list", "result": "Safari, Mail, Notes"}},
+    {"input": {"mode": "app_launch", "app": "Safari"}, "output": {"mode": "app_launch", "result": "launched"}},
+    {"input": {"mode": "volume_set", "volume": 30}, "output": {"mode": "volume_set", "result": "set to 30"}},
+    {"input": {"mode": "screenshot"}, "output": {"mode": "screenshot", "result": "/Users/.../skill-data/screenshot-...png"}}
+  ]
+}

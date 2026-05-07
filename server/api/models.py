@@ -61,12 +61,29 @@ class VoiceHealth(BaseModel):
     tts: dict[str, VoiceProviderHealth]
 
 
+class IntegrationBackendHealth(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    available: bool
+    selected: bool
+
+
+class IntegrationsHealth(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: dict[str, IntegrationBackendHealth]
+    calendar: dict[str, IntegrationBackendHealth]
+    messages: dict[str, IntegrationBackendHealth]
+    system: dict[str, IntegrationBackendHealth]
+
+
 class HealthResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: str
     providers: dict[str, ProviderHealth]
     voice: VoiceHealth | None = None
+    integrations: IntegrationsHealth | None = None
 
 
 class ErrorResponse(BaseModel):

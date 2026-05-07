@@ -18,6 +18,13 @@ STTProviderId = Literal["stub", "whisper"]
 TTSProviderId = Literal["stub", "piper"]
 STTLocation = Literal["server", "client"]
 
+# Integration backend ids — restricted to known values so config typos
+# fail validation rather than at first call.
+EmailBackendId = Literal["apple_mail", "imap"]
+CalendarBackendId = Literal["apple_calendar", "caldav"]
+MessagesBackendId = Literal["apple_messages"]
+SystemBackendId = Literal["macos"]
+
 
 class ServerConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -213,6 +220,92 @@ class BackgroundConfig(BaseModel):
     jobs: BackgroundJobsConfig = Field(default_factory=BackgroundJobsConfig)
 
 
+class ImapConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    host: str = ""
+    port: int = Field(default=993, ge=1, le=65535)
+    username: str = ""
+    # Name of the env var holding the password. Phase 6 will add
+    # `password_keychain` for macOS Keychain-stored creds.
+    password_env: str = "JUNO_IMAP_PASSWORD"
+    use_ssl: bool = True
+    mailbox: str = "INBOX"
+
+
+class SmtpConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    host: str = ""
+    port: int = Field(default=587, ge=1, le=65535)
+    username: str = ""
+    password_env: str = "JUNO_SMTP_PASSWORD"
+    use_ssl: bool = False  # True for port 465 implicit-TLS endpoints
+    use_starttls: bool = True
+    # Address to put in the From: header. Defaults to `username` when blank.
+    from_address: str = ""
+
+
+class EmailIntegrationConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    backend: EmailBackendId = "apple_mail"
+    imap: ImapConfig = Field(default_factory=ImapConfig)
+    smtp: SmtpConfig = Field(default_factory=SmtpConfig)
+
+
+class CalDAVConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: str = ""
+    username: str = ""
+    password_env: str = "JUNO_CALDAV_PASSWORD"
+
+
+class CalendarIntegrationConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    backend: CalendarBackendId = "apple_calendar"
+    caldav: CalDAVConfig = Field(default_factory=CalDAVConfig)
+
+
+class MessagesIntegrationConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    backend: MessagesBackendId = "apple_messages"
+
+
+class SystemIntegrationConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    backend: SystemBackendId = "macos"
+
+
+class IntegrationsConfig(BaseModel):
+    """Per-domain backend selection.
+
+    Skills and background jobs go through `IntegrationsRouter`, which
+    resolves the backend id here to a concrete implementation. Adding
+    a new backend (Microsoft Graph email, Google Calendar API,
+    signal-cli messages, ...) is a new file under
+    `server/integrations/<domain>/` plus one Literal entry above and
+    one router-registration line.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailIntegrationConfig = Field(default_factory=EmailIntegrationConfig)
+    calendar: CalendarIntegrationConfig = Field(
+        default_factory=CalendarIntegrationConfig
+    )
+    messages: MessagesIntegrationConfig = Field(
+        default_factory=MessagesIntegrationConfig
+    )
+    system: SystemIntegrationConfig = Field(
+        default_factory=SystemIntegrationConfig
+    )
+
+
 class JunoConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -221,3 +314,4 @@ class JunoConfig(BaseModel):
     inference: InferenceConfig = Field(default_factory=InferenceConfig)
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
     background: BackgroundConfig = Field(default_factory=BackgroundConfig)
+    integrations: IntegrationsConfig = Field(default_factory=IntegrationsConfig)

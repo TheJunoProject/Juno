@@ -1,0 +1,51 @@
+{
+  "name": "calendar",
+  "description": "Read events from the user's macOS Calendar.app, or create a new event. Times are local-time; ISO 8601 like '2026-05-15T14:30:00'.",
+  "when_to_use": "User asks what's on their schedule, what their day looks like, when they're free, or asks you to schedule an event.",
+  "when_not_to_use": "Quick 'what time is it' / 'what day is it' questions — those are already in the per-turn now-context block, no skill call needed. For an at-a-glance daily agenda, the calendar.md context report is usually enough.",
+  "parallelizable": false,
+  "input": {
+    "mode": {
+      "type": "string",
+      "enum": ["today", "list_calendars", "create"],
+      "required": true
+    },
+    "calendar": {
+      "type": "string",
+      "description": "For mode=create: name of the calendar to add the event to. If omitted, the first writable calendar is used."
+    },
+    "summary": {
+      "type": "string",
+      "description": "For mode=create: event title."
+    },
+    "start": {
+      "type": "string",
+      "description": "For mode=create: ISO 8601 local-time start (e.g. '2026-05-15T14:00:00')."
+    },
+    "end": {
+      "type": "string",
+      "description": "For mode=create: ISO 8601 local-time end."
+    },
+    "location": {
+      "type": "string",
+      "description": "For mode=create: optional location string."
+    }
+  },
+  "output": {
+    "mode":      {"type": "string"},
+    "events":    {"type": "array",  "description": "For today: list of {id, summary, calendar, start, end, location, all_day}."},
+    "calendars": {"type": "array",  "description": "For list_calendars: list of calendar names."},
+    "uid":       {"type": "string", "description": "For create: the new event's calendar UID."},
+    "result":    {"type": "string"}
+  },
+  "examples": [
+    {
+      "input":  {"mode": "today"},
+      "output": {"mode": "today", "events": [{"summary": "Standup", "start": "2026-05-15T10:00:00", "end": "2026-05-15T10:15:00", "calendar": "Work", "location": "", "all_day": false}]}
+    },
+    {
+      "input":  {"mode": "create", "calendar": "Personal", "summary": "Lunch with Sam", "start": "2026-05-15T13:00:00", "end": "2026-05-15T14:00:00", "location": "Pearl Street"},
+      "output": {"mode": "create", "uid": "...", "result": "created"}
+    }
+  ]
+}

@@ -22,6 +22,9 @@ from server.config import JunoConfig
 from server.inference import InferenceRouter
 from server.scheduler import EventBus
 
+if False:  # pragma: no cover -- typing-only, avoids a circular import at runtime
+    from server.integrations import IntegrationsRouter
+
 log = logging.getLogger(__name__)
 
 
@@ -37,6 +40,10 @@ class JobContext:
     reports_dir: Path
     inference: InferenceRouter
     bus: EventBus
+    # The active backend per integration domain. Optional so the
+    # RSS job (which doesn't need any integration) can be tested
+    # without spinning up real backends.
+    integrations: "IntegrationsRouter | None" = None
 
 
 @dataclass

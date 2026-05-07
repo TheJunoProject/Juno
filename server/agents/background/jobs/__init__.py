@@ -1,15 +1,15 @@
 from server.agents.background.jobs.base import BackgroundJob, JobContext, JobResult
-from server.agents.background.jobs.calendar_stub import CalendarStubJob
-from server.agents.background.jobs.email_stub import EmailStubJob
-from server.agents.background.jobs.messages_stub import MessagesStubJob
+from server.agents.background.jobs.calendar import CalendarJob
+from server.agents.background.jobs.email import EmailJob
+from server.agents.background.jobs.messages import MessagesJob
 from server.agents.background.jobs.rss import RSSJob
 
 __all__ = [
     "BackgroundJob",
-    "CalendarStubJob",
-    "EmailStubJob",
+    "CalendarJob",
+    "EmailJob",
     "JobContext",
     "JobResult",
-    "MessagesStubJob",
+    "MessagesJob",
     "RSSJob",
 ]

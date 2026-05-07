@@ -1,5 +1,5 @@
-"""Health endpoint. Reflects per-provider availability for both the
-inference layer and the voice layer."""
+"""Health endpoint. Reflects per-provider availability for the
+inference layer, the voice layer, and the integration backends."""
 
 from __future__ import annotations
 
@@ -7,12 +7,15 @@ from fastapi import APIRouter, Request
 
 from server.api.models import (
     HealthResponse,
+    IntegrationBackendHealth,
+    IntegrationsHealth,
     ProviderHealth,
     VoiceHealth,
     VoiceProviderHealth,
 )
 from server.config.schema import OllamaProviderConfig, VoiceConfig
 from server.inference import InferenceRouter
+from server.integrations import IntegrationsRouter
 from server.voice import VoiceRouter
 
 router = APIRouter()
@@ -54,4 +57,38 @@ async def health(request: Request) -> HealthResponse:
             )
         voice_health = VoiceHealth(stt=stt, tts=tts)
 
-    return HealthResponse(status="ok", providers=providers, voice=voice_health)
+    integrations_router: IntegrationsRouter | None = getattr(
+        request.app.state, "integrations_router", None
+    )
+    integrations_health: IntegrationsHealth | None = None
+    if integrations_router is not None:
+        selected = integrations_router.selected_ids()
+
+        async def _block(group: dict, sel_id: str) -> dict[str, IntegrationBackendHealth]:
+            out: dict[str, IntegrationBackendHealth] = {}
+            for bid, backend in group.items():
+                out[bid] = IntegrationBackendHealth(
+                    available=await backend.is_available(),
+                    selected=(bid == sel_id),
+                )
+            return out
+
+        integrations_health = IntegrationsHealth(
+            email=await _block(integrations_router.all_email(), selected["email"]),
+            calendar=await _block(
+                integrations_router.all_calendar(), selected["calendar"]
+            ),
+            messages=await _block(
+                integrations_router.all_messages(), selected["messages"]
+            ),
+            system=await _block(
+                integrations_router.all_system(), selected["system"]
+            ),
+        )
+
+    return HealthResponse(
+        status="ok",
+        providers=providers,
+        voice=voice_health,
+        integrations=integrations_health,
+    )

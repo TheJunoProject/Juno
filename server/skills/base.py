@@ -24,6 +24,9 @@ from server.config.paths import JunoPaths
 from server.inference import InferenceRouter
 from server.scheduler import EventBus
 
+if False:  # pragma: no cover -- typing-only to avoid import cycle
+    from server.integrations import IntegrationsRouter
+
 log = logging.getLogger(__name__)
 
 
@@ -42,6 +45,10 @@ class SkillContext:
     # Per-call sandbox dir under <paths.base>/skill-data/. Skills should
     # write transient artefacts here, not anywhere else on disk.
     sandbox_dir: Path
+    # The active backend per integration domain (email / calendar /
+    # messages / system). Optional so unit tests can construct a
+    # SkillContext without spinning up real backends.
+    integrations: "IntegrationsRouter | None" = None
 
 
 @dataclass

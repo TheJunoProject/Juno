@@ -1,0 +1,42 @@
+{
+  "name": "messages",
+  "description": "Read recent inbound iMessage / SMS conversations from the user's Mac, or send a message via Messages.app.",
+  "when_to_use": "User asks who recently messaged them, what someone said, or asks you to send a text / iMessage to a contact (by phone, email, or handle).",
+  "when_not_to_use": "User wants email — use the email skill. For an at-a-glance digest, the messages.md context report is usually enough; only call this skill for fresh detail or to take action.",
+  "parallelizable": false,
+  "input": {
+    "mode": {
+      "type": "string",
+      "enum": ["recent", "send"],
+      "required": true
+    },
+    "limit": {
+      "type": "integer",
+      "description": "For mode=recent: how many recent inbound messages to return (default 20, max 100)."
+    },
+    "to": {
+      "type": "string",
+      "description": "For mode=send: recipient handle (phone number with country code, iMessage email, or Apple ID)."
+    },
+    "body": {
+      "type": "string",
+      "description": "For mode=send: the message text."
+    }
+  },
+  "output": {
+    "mode":     {"type": "string"},
+    "messages": {"type": "array",  "description": "For recent: list of {sender, text, received_at, chat}."},
+    "count":    {"type": "integer"},
+    "result":   {"type": "string"}
+  },
+  "examples": [
+    {
+      "input":  {"mode": "recent", "limit": 5},
+      "output": {"mode": "recent", "count": 1, "messages": [{"sender": "+15551234567", "text": "running 5 late", "received_at": "...", "chat": ""}]}
+    },
+    {
+      "input":  {"mode": "send", "to": "+15551234567", "body": "ok see you soon"},
+      "output": {"mode": "send", "result": "sent to +15551234567"}
+    }
+  ]
+}

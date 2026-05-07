@@ -39,6 +39,7 @@ from server.api.routes import voice as voice_routes
 from server.config import JunoConfig
 from server.config.paths import resolve_paths
 from server.inference import InferenceRouter
+from server.integrations import IntegrationsRouter
 from server.scheduler import EventBus, JunoScheduler
 from server.skills import SkillRegistry
 from server.voice import VoiceRouter
@@ -64,6 +65,7 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
         # ---- construction (no IO) -----------------------------------
         router = InferenceRouter(config.inference)
         voice_router = VoiceRouter(config.voice)
+        integrations = IntegrationsRouter(config.integrations)
         bus = EventBus()
         scheduler = JunoScheduler(
             persist_db_path=paths.scheduler_db
@@ -78,6 +80,7 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
             inference=router,
             skills=skill_registry,
             bus=bus,
+            integrations=integrations,
         )
         classifier = IntentClassifier(router=router, skills=skill_registry)
         interactive = InteractiveLayer(
@@ -94,6 +97,7 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
                 inference=router,
                 bus=bus,
                 scheduler=scheduler,
+                integrations=integrations,
             )
             background_runtime.register_default_jobs()
 
@@ -101,6 +105,7 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
         app.state.paths = paths
         app.state.inference_router = router
         app.state.voice_router = voice_router
+        app.state.integrations_router = integrations
         app.state.event_bus = bus
         app.state.scheduler = scheduler
         app.state.skill_registry = skill_registry
@@ -150,6 +155,17 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
                 "with no tools. Check server/skills/ for missing manifests."
             )
 
+        # Integration backends: log the active selection so the operator
+        # sees at a glance whether they're pointed at Apple Mail vs IMAP,
+        # Apple Calendar vs CalDAV, etc.
+        log.info(
+            "Integrations: email=%s, calendar=%s, messages=%s, system=%s",
+            integrations.email.name,
+            integrations.calendar.name,
+            integrations.messages.name,
+            integrations.system.name,
+        )
+
         # ---- start scheduler last -----------------------------------
         if background_runtime is not None:
             scheduler.start()
@@ -161,6 +177,7 @@ def create_app(config: JunoConfig, *, reports_dir: Path | None = None) -> FastAP
         finally:
             # ---- shutdown in reverse order --------------------------
             scheduler.shutdown()
+            await integrations.aclose()
             await router.aclose()
             await voice_router.aclose()
             log.info("Juno server stopped cleanly.")

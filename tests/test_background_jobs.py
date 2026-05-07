@@ -14,11 +14,8 @@ import pytest
 
 from server.agents.background.jobs import (
     BackgroundJob,
-    CalendarStubJob,
-    EmailStubJob,
     JobContext,
     JobResult,
-    MessagesStubJob,
     RSSJob,
 )
 from server.agents.background.runtime import BackgroundRuntime
@@ -110,38 +107,10 @@ def _ctx(
     )
 
 
-# ---- stub jobs ---------------------------------------------------------
-
-
-async def test_email_stub_writes_placeholder(tmp_path: Path) -> None:
-    config = _config_with_feeds([])
-    inference = InferenceRouter(config.inference)
-    job = EmailStubJob(_ctx(config, tmp_path, inference))
-    result = await job.run()
-    assert result.report_filename == "email-digest.md"
-    assert "Phase 3 placeholder" in result.report_body
-    assert "email" in result.report_body.lower()
-    await inference.aclose()
-
-
-async def test_calendar_stub_writes_placeholder(tmp_path: Path) -> None:
-    config = _config_with_feeds([])
-    inference = InferenceRouter(config.inference)
-    job = CalendarStubJob(_ctx(config, tmp_path, inference))
-    result = await job.run()
-    assert result.report_filename == "calendar.md"
-    assert "Phase 3 placeholder" in result.report_body
-    await inference.aclose()
-
-
-async def test_messages_stub_writes_placeholder(tmp_path: Path) -> None:
-    config = _config_with_feeds([])
-    inference = InferenceRouter(config.inference)
-    job = MessagesStubJob(_ctx(config, tmp_path, inference))
-    result = await job.run()
-    assert result.report_filename == "messages.md"
-    assert "Phase 3 placeholder" in result.report_body
-    await inference.aclose()
+# Phase-5 macOS-integration job tests (email / calendar / messages
+# replacing the Phase-3 stubs) live in tests/test_macos_jobs.py — they
+# need to mock AppleScript subprocess calls and don't share fixtures
+# with the RSS/runtime tests below.
 
 
 # ---- RSS job (with mock HTTP) ------------------------------------------

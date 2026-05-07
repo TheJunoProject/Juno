@@ -22,16 +22,17 @@ from pathlib import Path
 
 from server.agents.background.jobs import (
     BackgroundJob,
-    CalendarStubJob,
-    EmailStubJob,
+    CalendarJob,
+    EmailJob,
     JobContext,
     JobResult,
-    MessagesStubJob,
+    MessagesJob,
     RSSJob,
 )
 from server.config import JunoConfig
 from server.config.schema import StubJobConfig
 from server.inference import InferenceRouter
+from server.integrations import IntegrationsRouter
 from server.scheduler import EventBus, JunoScheduler
 
 log = logging.getLogger(__name__)
@@ -55,12 +56,14 @@ class BackgroundRuntime:
         inference: InferenceRouter,
         bus: EventBus,
         scheduler: JunoScheduler,
+        integrations: IntegrationsRouter | None = None,
     ) -> None:
         self._config = config
         self._reports_dir = reports_dir
         self._inference = inference
         self._bus = bus
         self._scheduler = scheduler
+        self._integrations = integrations
         self._jobs: dict[str, BackgroundJob] = {}
         self._job_schedules: dict[str, str] = {}
         self._last_run: dict[str, JobRunRecord] = {}
@@ -80,18 +83,20 @@ class BackgroundRuntime:
             reports_dir=self._reports_dir,
             inference=self._inference,
             bus=self._bus,
+            integrations=self._integrations,
         )
         jobs_cfg = self._config.background.jobs
 
-        # RSS — real implementation.
+        # RSS — pure-network, no OS deps.
         if jobs_cfg.rss.enabled:
             self._register(RSSJob(ctx), jobs_cfg.rss.schedule)
 
-        # Stubs — Phase 5 will swap them out.
+        # macOS-integration jobs (Phase 5). Each gracefully degrades to a
+        # "permission required" report if its automation prompt is denied.
         for job_cls, stub_cfg in (
-            (EmailStubJob, jobs_cfg.email),
-            (CalendarStubJob, jobs_cfg.calendar),
-            (MessagesStubJob, jobs_cfg.messages),
+            (EmailJob, jobs_cfg.email),
+            (CalendarJob, jobs_cfg.calendar),
+            (MessagesJob, jobs_cfg.messages),
         ):
             assert isinstance(stub_cfg, StubJobConfig)
             if stub_cfg.enabled:

@@ -1,0 +1,46 @@
+{
+  "name": "email",
+  "description": "Read recent unread email from the user's Mail.app inbox, or send a plain-text message from their default account.",
+  "when_to_use": "User asks what's in their inbox, who recently emailed them, or asks you to send an email.",
+  "when_not_to_use": "User wants you to read a saved email file (use file_read). User wants iMessage / SMS (use messages skill). For an at-a-glance digest of the inbox, the email-digest.md context report is usually enough — only call this skill when the report doesn't have what they need or they want to take action.",
+  "parallelizable": false,
+  "input": {
+    "mode": {
+      "type": "string",
+      "enum": ["recent", "send"],
+      "required": true
+    },
+    "limit": {
+      "type": "integer",
+      "description": "For mode=recent: how many unread to return (default 10, max 50)."
+    },
+    "to": {
+      "type": "string",
+      "description": "For mode=send: recipient email address."
+    },
+    "subject": {
+      "type": "string",
+      "description": "For mode=send: subject line."
+    },
+    "body": {
+      "type": "string",
+      "description": "For mode=send: plain-text body."
+    }
+  },
+  "output": {
+    "mode":     {"type": "string"},
+    "messages": {"type": "array",  "description": "For recent: list of {id, subject, sender, received, read}."},
+    "count":    {"type": "integer"},
+    "result":   {"type": "string", "description": "For send: confirmation."}
+  },
+  "examples": [
+    {
+      "input":  {"mode": "recent", "limit": 5},
+      "output": {"mode": "recent", "count": 2, "messages": [{"id": "...", "subject": "Lunch?", "sender": "Sam <sam@x.com>", "received": "...", "read": false}]}
+    },
+    {
+      "input":  {"mode": "send", "to": "sam@x.com", "subject": "Re: Lunch?", "body": "Sounds good — 1pm at the usual place."},
+      "output": {"mode": "send", "result": "sent"}
+    }
+  ]
+}

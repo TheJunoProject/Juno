@@ -44,6 +44,7 @@ from server.inference import (
     Message,
     ToolCall,
 )
+from server.integrations import IntegrationsRouter
 from server.scheduler import EventBus
 from server.skills import SkillContext, SkillError, SkillRegistry
 
@@ -110,12 +111,14 @@ class AgenticLayer:
         inference: InferenceRouter,
         skills: SkillRegistry,
         bus: EventBus,
+        integrations: IntegrationsRouter | None = None,
     ) -> None:
         self._config = config
         self._paths = paths
         self._inference = inference
         self._skills = skills
         self._bus = bus
+        self._integrations = integrations
 
     # ---- non-streaming run ---------------------------------------------
 
@@ -152,6 +155,7 @@ class AgenticLayer:
             inference=self._inference,
             bus=self._bus,
             sandbox_dir=(self._paths.base / "skill-data"),
+            integrations=self._integrations,
         )
         skill_ctx.sandbox_dir.mkdir(parents=True, exist_ok=True)
 
